@@ -11,7 +11,7 @@ _PAGING = frozenset({"CRITICAL", "WARNING"})
 _FAST = re.compile(
     r"(?i)(?:"
     r"(?<![a-z])down(?![a-z])|unreachable|"
-    r"crashloop|oomkilled|(?<![a-z])oom(?![a-z])|java\s*heap|"
+    r"crashloop|oomkilled|(?<![a-z])oom(?![a-z])|imagepull|backoff|java\s*heap|"
     r"burn_?rate|error_?budget|"
     r"notready|not_ready|failedmount|failed_mount|"
     r"quorum|(?<![a-z])leader(?![a-z])|replicac(?:ao|ion)|"

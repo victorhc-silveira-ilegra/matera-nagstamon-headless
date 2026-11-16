@@ -35,6 +35,12 @@ KUBE_NOISE = re.compile(
 FALCON_NOISE = re.compile(r"(?i)\bfalcon")
 KUBELET_CERT_NOISE = re.compile(r"(?i)kubeletservercertificateexpiration")
 KUBE_POD_CPU_NOISE = re.compile(r"(?i)altoconsumodecpu.*pod|podcpuusagehigh")
+KUBE_AUXILIARY_NAMESPACES = re.compile(
+    r"(?i)(?:^|/|\b)(?:[a-z0-9_-]+-(?:logging|velero)|logging|velero|kube-system|cert-manager)(?:/|\b|$)"
+)
+KUBE_SECONDARY_WARNINGS = re.compile(
+    r"(?i)(?:replicas?\s*mismatch|deployment\s*replicas?|rollout\s*stuck|daemonset\s*rollout|job\s*not\s*completed|replicasmismatch|deploymentreplicas|rolloutstuck|daemonsetrollout|jobnotcompleted)"
+)
 K8S_SRE_ALLOWED = re.compile(
     r"(?i)(?:"
     r"sloburnrate|errorbudget|burnrate|"
@@ -42,10 +48,10 @@ K8S_SRE_ALLOWED = re.compile(
     r"latency|responsetime|slowrequest|durationp9[59]|"
     r"ingress|servicemesh|envoy|nginx|connectionpool|activeconnection|"
     r"crashloop|livenessprobe|restarts?|oomkilled|oom|"
-    r"deploymentreplicas|replicasmismatch|rollout|pending|"
-    r"targetdown|aggregatedapi|podnotready|daemonset|"
+    r"imagepull|backoff|"
+    r"targetdown|aggregatedapi|podnotready|"
     r"clusterdegraded|allreplicasdown|toomanypods|"
-    r"hpa|jobfailed|cronjob|jobnotcompleted|"
+    r"hpa|jobfailed|cronjob|"
     r"notready|memorypressure|diskpressure|pidpressure|"
     r"throttl|overcommit|persistentvolume|pvc|failedmount|volumeattachment|"
     r"karpenter|clusterautoscaler|"
@@ -85,16 +91,20 @@ def _aware(instant: datetime) -> datetime:
 
 
 def _is_kubernetes_noise(alert: Alert) -> bool:
-    if alert.severity.value == "CRITICAL":
-        return False
     full_haystack = (
         f"{alert.alertname} {alert.desc} {alert.status_text} {alert.host} {alert.app}"
     )
+    if KUBE_AUXILIARY_NAMESPACES.search(full_haystack) is not None:
+        return True
+    if alert.severity.value == "CRITICAL":
+        return False
     if FALCON_NOISE.search(full_haystack) is not None:
         return True
     if KUBELET_CERT_NOISE.search(alert.alertname) is not None:
         return True
     if KUBE_POD_CPU_NOISE.search(alert.alertname) is not None:
+        return True
+    if KUBE_SECONDARY_WARNINGS.search(full_haystack) is not None:
         return True
     text_haystack = f"{alert.alertname} {alert.desc} {alert.status_text}"
     if K8S_SRE_ALLOWED.search(text_haystack) is not None:

@@ -47,7 +47,9 @@ O serviço de filtragem reproduz fielmente as regras de descarte da interface gr
 - Incidentes de longa duração correspondentes a `FILTER_DURATION_REGEX` (padrão `([4-9]|\d{2,})d`) ou com duração igual/superior a `FILTER_DURATION_MAX_SECONDS` (padrão 345600s / 4 dias).
 - Alarmes com início indeterminado ou anterior à janela estipulada (salvo quando `WINDOW_ALLOW_PAST_ACTIVE_ALERTS=true`).
 - Ruídos transitórios e probes de debug de legado.
-- Alertas de infraestrutura interna do Kubernetes sem impacto em disponibilidade ou SLOs de produção.
+- Alertas de ferramentas auxiliares de Kubernetes: namespaces de logging (`*-logging`, `logging`), backup (`*-velero`, `velero`), sistema de nós e certificados (`kube-system`, `cert-manager`).
+- Alertas secundários/cascata de Kubernetes em `WARNING` (`KubeDeploymentReplicasMismatch`, `KubeDaemonSetRolloutStuck`, `KubeJobNotCompleted`).
+- Preservação estrita de falhas de aplicação de negócio: `CrashLoopBackOff`, `ImagePullBackOff` / `PodBackoffDetected`, `TargetDown` e `OOMKilled`.
 
 ### 3.3 Projeção Canônica (`AlertViewService`)
 

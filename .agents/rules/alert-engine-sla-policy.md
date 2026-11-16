@@ -52,9 +52,12 @@ A política `AlertFilterPolicy` gerencia o horário comercial através das vari�
   - Sensores Falcon `falcon-*`.
   - Expirations ruidosas: `KubeletServerCertificateExpiration`, `AltoConsumodeCPUPod`.
   - Alertas intrínsecos de teste: `Watchdog`, `InfoInhibitor`, `ExampleAlert`.
+  - **Namespaces Auxiliares de Cluster**: Namespaces de logging (`*-logging`, `logging`), backup (`*-velero`, `velero`), sistema de nós e certificados (`kube-system`, `cert-manager`) são sumariamente suprimidos como ruído de ferramentas de suporte.
+  - **Alertas Secundários / Cascata em WARNING**: `KubeDeploymentReplicasMismatch`, `KubeDaemonSetRolloutStuck` e `KubeJobNotCompleted` em severidade `WARNING` são suprimidos para evitar duplicações e alertas cascata quando a falha primária (`CrashLoopBackOff`, `ImagePullBackOff` ou `TargetDown`) já é notificada.
 - **Alertas Essenciais Sempre Liberados**:
   - Incidentes de infraestrutura crítica: `ROOT MAIL BOX`, `CHECK TABELAS SEM ESTATISTICAS`, `DBA - CHECK REPLICACAO`, `App Java Heap`, `PUPPET-AGENT`, `All disks`, `TargetDown`.
-  - Alertas com severidade `CRITICAL` nunca são silenciados por regras de ruído.
+  - Falhas de aplicação no Kubernetes: `ImagePullBackOff` / `PodBackoffDetected`, `CrashLoopBackOff` / `KubePodCrashLooping`, `OOMKilled`, `SLOBurnRate` e `DeploymentCrashLoopBackoff`.
+  - Alertas com severidade `CRITICAL` (fora de namespaces auxiliares) nunca são silenciados por regras de ruído.
 
 ---
 

@@ -49,6 +49,9 @@ def test_hold_fast_disk_and_down() -> None:
     assert hold_seconds(
         _alert(alertname="KubePodCrashLooping", desc="CrashLoopBackOff")
     ) == (HOLD_FAST_SECONDS)
+    assert hold_seconds(
+        _alert(alertname="PodBackoffDetected", desc="ImagePullBackOff")
+    ) == (HOLD_FAST_SECONDS)
     assert hold_seconds(_alert(alertname="KubeOOMKilled", desc="OOMKilled pod")) == (
         HOLD_FAST_SECONDS
     )

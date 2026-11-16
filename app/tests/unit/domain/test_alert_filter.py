@@ -455,7 +455,7 @@ def test_filter_kubernetes_noise() -> None:
     )
     cert = _alert(
         alertname="TLSCertificateExpiringSoon",
-        desc="cert-manager cert expires",
+        desc="app ingress tls cert expires",
         starts_at=started,
     )
     webhook = _alert(
@@ -480,8 +480,8 @@ def test_filter_kubernetes_noise() -> None:
     assert not policy.is_filtered(mesh_sat, NOW)
     assert not policy.is_filtered(crashloop, NOW)
     assert not policy.is_filtered(oom, NOW)
-    assert not policy.is_filtered(mismatch, NOW)
-    assert not policy.is_filtered(pending, NOW)
+    assert policy.is_filtered(mismatch, NOW)
+    assert policy.is_filtered(pending, NOW)
     assert not policy.is_filtered(hpa, NOW)
     assert not policy.is_filtered(job, NOW)
     assert not policy.is_filtered(node_notready, NOW)
@@ -815,3 +815,93 @@ def test_filter_nagstamon_duration_regex() -> None:
         window_enabled=False, filter_duration_regex=None
     )
     assert not no_duration_regex_policy.is_filtered(alert_4d, now)
+
+
+def test_filter_kubernetes_fine_comb() -> None:
+    policy = AlertFilterPolicy(window_enabled=False)
+    now = datetime(2026, 8, 14, 14, 0, 0, tzinfo=SP_TZ)
+    started = now - timedelta(minutes=25)
+
+    fluent_bit = _alert(
+        server="ibc-alertmanager-newp-prd",
+        severity=Severity("warning"),
+        alertname="KubeDaemonSetRolloutStuck",
+        host="monitoring-kube-state-metrics",
+        app="ibc-prd-logging",
+        desc="DaemonSet ibc-prd-logging/fluent-bit has not finished",
+        status_text="DaemonSet ibc-prd-logging/fluent-bit has not finished",
+        starts_at=started,
+    )
+    assert policy.is_filtered(fluent_bit, now)
+
+    velero_job = _alert(
+        server="ouribank-alertmanager-mip-prd",
+        severity=Severity("warning"),
+        alertname="KubeJobNotCompleted",
+        host="ouribank-prd-velero",
+        app="ouribank-prd-velero",
+        desc="Job velero-upgrade-crds is taking more than 12h",
+        status_text="Job velero-upgrade-crds is taking more than 12h",
+        starts_at=started,
+    )
+    assert policy.is_filtered(velero_job, now)
+
+    critical_velero = _alert(
+        server="ouribank-alertmanager-mip-prd",
+        severity=Severity("critical"),
+        alertname="VeleroBackupFailed",
+        host="ouribank-prd-velero",
+        app="ouribank-prd-velero",
+        desc="velero backup failed",
+        status_text="backup failed in ouribank-prd-velero",
+        starts_at=started,
+    )
+    assert policy.is_filtered(critical_velero, now)
+
+    replicas_mismatch = _alert(
+        server="ouribank-alertmanager-mip-prd",
+        severity=Severity("warning"),
+        alertname="KubeDeploymentReplicasMismatch",
+        host="monitoring-kube-state-metrics",
+        app="ouribank-prd-mip",
+        desc="Deployment spi-qrcodes2 has not matched expected replicas",
+        status_text="Deployment spi-qrcodes2 has not matched expected replicas",
+        starts_at=started,
+    )
+    assert policy.is_filtered(replicas_mismatch, now)
+
+    pod_backoff = _alert(
+        server="travelex-alertmanager-newp-prd",
+        severity=Severity("critical"),
+        alertname="PodBackoffDetected",
+        host="autoinvest-legacy-integration-kafka-topology-mr9hl",
+        app="ati-prd",
+        desc="Container kafka-topology em ati-prd ImagePullBackOff.",
+        status_text="Container kafka-topology em ati-prd ImagePullBackOff.",
+        starts_at=started,
+    )
+    assert not policy.is_filtered(pod_backoff, now)
+
+    pod_crashloop = _alert(
+        server="ouribank-alertmanager-mip-prd",
+        severity=Severity("warning"),
+        alertname="KubePodCrashLooping",
+        host="spi-qrcodes2-64fb8478fd-vhwvc",
+        app="ouribank-prd-mip",
+        desc="Pod spi-qrcodes2 is in waiting state CrashLoopBackOff",
+        status_text="Pod spi-qrcodes2 is in waiting state CrashLoopBackOff",
+        starts_at=started,
+    )
+    assert not policy.is_filtered(pod_crashloop, now)
+
+    target_down = _alert(
+        server="ouribank-alertmanager-mip-prd",
+        severity=Severity("warning"),
+        alertname="TargetDown",
+        host="ouribank-prd-mip",
+        app="ouribank-prd-mip",
+        desc="100% of the spi-qrcodes2 targets in ouribank-prd-mip are down.",
+        status_text="100% of the spi-qrcodes2 targets in ouribank-prd-mip are down.",
+        starts_at=started,
+    )
+    assert not policy.is_filtered(target_down, now)
