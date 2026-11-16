@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.16.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.15.0...v1.16.0) (2026-11-16)
+
+### Features
+
+* **filters:** alinha filtros de servicos, duracao e estados com nagstamon 3.16.2 ([0caab22](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/0caab22dce11759f7abcd4932fe1e898142a8632))
+
 ## [1.15.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.14.1...v1.15.0) (2026-11-09)
 
 ### Features
