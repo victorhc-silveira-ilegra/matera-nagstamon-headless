@@ -144,6 +144,8 @@ class Settings:
     sound_enabled: bool
     gchat_webhook_url: str
     dedup_ledger_path: Path | None
+    filter_services_regex: str = r"^(PodPending\s*|\s*KubeContainerWaiting)$"
+    filter_duration_regex: str = r"([4-9]|\d{2,})d"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -210,9 +212,15 @@ class Settings:
             "FILTER_HOLD_WARNING_SECONDS",
         )
         filter_duration_max_seconds = _parse_positive_int(
-            os.environ.get("FILTER_DURATION_MAX_SECONDS", "86400").strip() or "86400",
+            os.environ.get("FILTER_DURATION_MAX_SECONDS", "345600").strip() or "345600",
             "FILTER_DURATION_MAX_SECONDS",
         )
+        filter_services_regex = os.environ.get(
+            "FILTER_SERVICES_REGEX", r"^(PodPending\s*|\s*KubeContainerWaiting)$"
+        ).strip()
+        filter_duration_regex = os.environ.get(
+            "FILTER_DURATION_REGEX", r"([4-9]|\d{2,})d"
+        ).strip()
         for hold_name, hold_value in (
             ("FILTER_HOLD_FAST_SECONDS", filter_hold_fast_seconds),
             ("FILTER_HOLD_CRITICAL_SECONDS", filter_hold_critical_seconds),
@@ -248,6 +256,8 @@ class Settings:
             filter_hold_critical_seconds=filter_hold_critical_seconds,
             filter_hold_warning_seconds=filter_hold_warning_seconds,
             filter_duration_max_seconds=filter_duration_max_seconds,
+            filter_services_regex=filter_services_regex,
+            filter_duration_regex=filter_duration_regex,
             sound_enabled=sound_enabled,
             gchat_webhook_url=gchat_webhook_url,
             dedup_ledger_path=dedup_ledger_path,

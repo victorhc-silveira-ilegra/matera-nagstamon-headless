@@ -117,7 +117,11 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.filter_hold_fast_seconds == 600
     assert settings.filter_hold_critical_seconds == 900
     assert settings.filter_hold_warning_seconds == 1200
-    assert settings.filter_duration_max_seconds == 86400
+    assert settings.filter_duration_max_seconds == 345600
+    assert (
+        settings.filter_services_regex == r"^(PodPending\s*|\s*KubeContainerWaiting)$"
+    )
+    assert settings.filter_duration_regex == r"([4-9]|\d{2,})d"
     assert settings.sound_enabled is True
     assert settings.gchat_webhook_url == ""
     assert settings.dedup_ledger_path is None
@@ -346,7 +350,7 @@ def test_settings_blank_duration_bounds(monkeypatch: pytest.MonkeyPatch) -> None
     assert settings.filter_hold_fast_seconds == 600
     assert settings.filter_hold_critical_seconds == 900
     assert settings.filter_hold_warning_seconds == 1200
-    assert settings.filter_duration_max_seconds == 86400
+    assert settings.filter_duration_max_seconds == 345600
 
 
 def test_settings_rejects_hold_not_less_than_max(

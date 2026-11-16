@@ -36,10 +36,15 @@ O serviço `AlertHoldService` (`domain/services/alert_hold.py`) determina a lat�
 | **Baixo** | Ocorrências com severidade `WARNING`, métricas oscilantes de CPU, memória, latência de rede e saturação de fila | 20 min (`FILTER_HOLD_WARNING_SECONDS=1200`) |
 | **Informativo** | Ocorrências `INFO` ou sem início conhecido | Descarte imediato |
 
-### 3.2 Filtragem de Ruído (`AlertFilterService`)
+### 3.2 Filtragem de Ruído (`AlertFilterPolicy`)
 
-O serviço de filtragem descarta automaticamente:
+O serviço de filtragem reproduz fielmente as regras de descarte da interface gráfica do Nagstamon 3.16.2:
 - Alertas já reconhecidos no monitor (`acknowledged=True` ou silenciados por `silenced_by`).
+- Alertas com notificações desativadas no monitor (`notifications_enabled=False` ou flag `nd.gif`).
+- Alertas em manutenção programada / downtime (`in_maintenance=True`).
+- Alertas em estado transitório / soft state (`is_soft_state=True`, e.g. tentativa `1/3` ou estado `pending`).
+- Serviços ruidosos correspondentes a `FILTER_SERVICES_REGEX` (padrão `^(PodPending\s*|\s*KubeContainerWaiting)$`).
+- Incidentes de longa duração correspondentes a `FILTER_DURATION_REGEX` (padrão `([4-9]|\d{2,})d`) ou com duração igual/superior a `FILTER_DURATION_MAX_SECONDS` (padrão 345600s / 4 dias).
 - Alarmes com início indeterminado ou anterior à janela estipulada (salvo quando `WINDOW_ALLOW_PAST_ACTIVE_ALERTS=true`).
 - Ruídos transitórios e probes de debug de legado.
 - Alertas de infraestrutura interna do Kubernetes sem impacto em disponibilidade ou SLOs de produção.

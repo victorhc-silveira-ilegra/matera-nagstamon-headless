@@ -42,8 +42,8 @@ K8S_SRE_ALLOWED = re.compile(
     r"latency|responsetime|slowrequest|durationp9[59]|"
     r"ingress|servicemesh|envoy|nginx|connectionpool|activeconnection|"
     r"crashloop|livenessprobe|restarts?|oomkilled|oom|"
-    r"deploymentreplicas|replicasmismatch|rollout|podpending|pending|"
-    r"targetdown|aggregatedapi|podnotready|daemonset|containerwaiting|"
+    r"deploymentreplicas|replicasmismatch|rollout|pending|"
+    r"targetdown|aggregatedapi|podnotready|daemonset|"
     r"clusterdegraded|allreplicasdown|toomanypods|"
     r"hpa|jobfailed|cronjob|jobnotcompleted|"
     r"notready|memorypressure|diskpressure|pidpressure|"
@@ -53,7 +53,11 @@ K8S_SRE_ALLOWED = re.compile(
     r")"
 )
 SKIP_STATES = frozenset({"suppressed", "pending", "unprocessed"})
-MAX_DURATION_SECONDS = 86400
+DEFAULT_FILTER_SERVICES_REGEX = re.compile(
+    r"(?i)^(podpending\s*|\s*kubecontainerwaiting)$"
+)
+DEFAULT_FILTER_DURATION_REGEX = re.compile(r"([4-9]|\d{2,})d", re.IGNORECASE)
+MAX_DURATION_SECONDS = 345600
 DURATION_UNITS = {"d": 86400, "h": 3600, "m": 60, "s": 1}
 DEFAULT_FILTER_TIMEZONE = ZoneInfo("America/Sao_Paulo")
 DEFAULT_WINDOW_START = time(13, 30)
@@ -115,6 +119,8 @@ class AlertFilterPolicy:
         not_before: datetime | None = None,
         window_enabled: bool = True,
         allow_past_active_alerts: bool = False,
+        filter_services_regex: re.Pattern[str] | None = DEFAULT_FILTER_SERVICES_REGEX,
+        filter_duration_regex: re.Pattern[str] | None = DEFAULT_FILTER_DURATION_REGEX,
     ) -> None:
         self._window_start = window_start
         self._window_end = window_end
@@ -127,6 +133,8 @@ class AlertFilterPolicy:
         self._hold_warning_seconds = hold_warning_seconds
         self._max_duration_seconds = max_duration_seconds
         self._not_before = not_before
+        self._filter_services_regex = filter_services_regex
+        self._filter_duration_regex = filter_duration_regex
 
     def _localize(self, instant: datetime) -> datetime:
         return _aware(instant).astimezone(self._timezone)
@@ -154,6 +162,23 @@ class AlertFilterPolicy:
 
     def is_filtered(self, alert: Alert, now: datetime) -> bool:
         if alert.acknowledged:
+            return True
+        if not alert.notifications_enabled:
+            return True
+        if alert.in_maintenance:
+            return True
+        if alert.is_soft_state:
+            return True
+        if (
+            self._filter_services_regex is not None
+            and self._filter_services_regex.search(alert.alertname.strip()) is not None
+        ):
+            return True
+        if (
+            self._filter_duration_regex is not None
+            and alert.duration_str
+            and self._filter_duration_regex.search(alert.duration_str) is not None
+        ):
             return True
         status_text = alert.status_text or f"{alert.alertname} {alert.desc}"
         if STATUS_INFO_FILTER.search(status_text):

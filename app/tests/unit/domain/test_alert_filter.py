@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -695,7 +696,7 @@ def test_filter_morning_shift_rejects_outside_window_or_expired() -> None:
         allow_past_active_alerts=True,
     )
     old_alert = _alert(
-        starts_at=now_morning - timedelta(days=2),
+        starts_at=now_morning - timedelta(days=5),
         severity=Severity("critical"),
         alertname="HttpError",
     )
@@ -736,3 +737,81 @@ def test_filter_afternoon_shift_rejects_morning_alerts() -> None:
     assert policy.is_filtered(dawn_alert, now_afternoon)
     assert policy.is_filtered(morning_alert, now_afternoon)
     assert not policy.is_filtered(afternoon_alert, now_afternoon)
+
+
+def test_filter_nagstamon_flags_suppression() -> None:
+    policy = AlertFilterPolicy(window_enabled=False)
+    now = datetime(2026, 8, 14, 14, 0, 0, tzinfo=SP_TZ)
+    base_kwargs: dict[str, object] = {
+        "starts_at": now - timedelta(minutes=25),
+        "severity": Severity("critical"),
+        "alertname": "HttpError",
+    }
+    normal_alert = _alert(**base_kwargs)
+    assert not policy.is_filtered(normal_alert, now)
+
+    disabled_notif = _alert(notifications_enabled=False, **base_kwargs)
+    assert policy.is_filtered(disabled_notif, now)
+
+    in_maint = _alert(in_maintenance=True, **base_kwargs)
+    assert policy.is_filtered(in_maint, now)
+
+    soft_state = _alert(is_soft_state=True, **base_kwargs)
+    assert policy.is_filtered(soft_state, now)
+
+
+def test_filter_nagstamon_services_regex() -> None:
+    policy = AlertFilterPolicy(window_enabled=False)
+    now = datetime(2026, 8, 14, 14, 0, 0, tzinfo=SP_TZ)
+    base_kwargs: dict[str, object] = {
+        "starts_at": now - timedelta(minutes=25),
+        "severity": Severity("critical"),
+    }
+    pod_pending = _alert(alertname="PodPending", **base_kwargs)
+    kube_waiting = _alert(alertname="KubeContainerWaiting", **base_kwargs)
+    valid_service = _alert(alertname="HighCPUUsage", **base_kwargs)
+
+    assert policy.is_filtered(pod_pending, now)
+    assert policy.is_filtered(kube_waiting, now)
+    assert not policy.is_filtered(valid_service, now)
+
+    no_service_regex_policy = AlertFilterPolicy(
+        window_enabled=False, filter_services_regex=None
+    )
+    assert not no_service_regex_policy.is_filtered(pod_pending, now)
+
+    custom_regex = AlertFilterPolicy(
+        window_enabled=False,
+        filter_services_regex=re.compile(r"^CustomNoise$"),
+    )
+    custom_alert = _alert(alertname="CustomNoise", **base_kwargs)
+    assert custom_regex.is_filtered(custom_alert, now)
+    assert not custom_regex.is_filtered(pod_pending, now)
+
+
+def test_filter_nagstamon_duration_regex() -> None:
+    policy = AlertFilterPolicy(window_enabled=False)
+    now = datetime(2026, 8, 14, 14, 0, 0, tzinfo=SP_TZ)
+    base_kwargs: dict[str, object] = {
+        "starts_at": now - timedelta(hours=1),
+        "severity": Severity("critical"),
+        "alertname": "HttpError",
+    }
+    alert_4d = _alert(duration_str="4d 02h 10m", **base_kwargs)
+    alert_9d = _alert(duration_str="9d 11h 00m", **base_kwargs)
+    alert_12d = _alert(duration_str="12d 01h 05m", **base_kwargs)
+    alert_3d = _alert(duration_str="3d 23h 59m", **base_kwargs)
+    alert_1d = _alert(duration_str="1d 05h 00m", **base_kwargs)
+    alert_hours = _alert(duration_str="05h 30m 00s", **base_kwargs)
+
+    assert policy.is_filtered(alert_4d, now)
+    assert policy.is_filtered(alert_9d, now)
+    assert policy.is_filtered(alert_12d, now)
+    assert not policy.is_filtered(alert_3d, now)
+    assert not policy.is_filtered(alert_1d, now)
+    assert not policy.is_filtered(alert_hours, now)
+
+    no_duration_regex_policy = AlertFilterPolicy(
+        window_enabled=False, filter_duration_regex=None
+    )
+    assert not no_duration_regex_policy.is_filtered(alert_4d, now)

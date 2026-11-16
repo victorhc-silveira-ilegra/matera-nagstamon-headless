@@ -74,6 +74,12 @@ def _to_alert(server: MonitorServer, item: dict[str, Any]) -> Alert:
         or labels.get("ambiente")
         or ""
     )
+    silenced = _as_tuple(status.get("silencedBy"))
+    inhibited = _as_tuple(status.get("inhibitedBy"))
+    state = str(status.get("state") or "")
+    in_maintenance = bool(silenced)
+    notifications_enabled = not bool(silenced or inhibited)
+    is_soft_state = state.strip().lower() == "pending"
     return Alert(
         server=server.name,
         severity=Severity(severity_raw),
@@ -82,11 +88,14 @@ def _to_alert(server: MonitorServer, item: dict[str, Any]) -> Alert:
         desc=desc,
         status_text=status_text,
         starts_at=starts_at,
-        alert_state=str(status.get("state") or ""),
-        silenced_by=_as_tuple(status.get("silencedBy")),
-        inhibited_by=_as_tuple(status.get("inhibitedBy")),
+        alert_state=state,
+        silenced_by=silenced,
+        inhibited_by=inhibited,
         host=host,
         environment=environment,
+        notifications_enabled=notifications_enabled,
+        in_maintenance=in_maintenance,
+        is_soft_state=is_soft_state,
     )
 
 

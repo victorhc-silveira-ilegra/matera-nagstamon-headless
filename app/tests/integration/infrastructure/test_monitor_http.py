@@ -162,10 +162,16 @@ def test_alertmanager_parses_payload() -> None:
     assert alerts[0].silenced_by == ("s1",)
     assert alerts[0].inhibited_by == ("i1",)
     assert alerts[0].starts_at is not None
+    assert alerts[0].in_maintenance is True
+    assert alerts[0].notifications_enabled is False
+    assert alerts[0].is_soft_state is False
     assert alerts[1].app == "web01"
     assert alerts[1].host == "web01"
     assert alerts[1].status_text == "high cpu"
     assert alerts[1].starts_at is None
+    assert alerts[1].in_maintenance is False
+    assert alerts[1].notifications_enabled is True
+    assert alerts[1].is_soft_state is False
     assert alerts[2].alertname == "N/A"
     assert alerts[2].desc == "Sem descricao"
     assert alerts[2].host == "N/A"
@@ -439,3 +445,57 @@ def test_nagios_debug_exc_info() -> None:
     transport = _Transport(status_code=500, body="err", content_type="text/html")
     client = NagiosCgiHttpClient(timeout_seconds=5.0, transport=transport)
     assert client.fetch(_nagios_server()) == []
+
+
+def test_alertmanager_pending_is_soft_state() -> None:
+    payload = [
+        {
+            "labels": {"alertname": "PodCrash", "instance": "k8s01"},
+            "annotations": {"description": "pod crashing"},
+            "startsAt": "2026-08-14T12:00:00Z",
+            "status": {"state": "pending", "silencedBy": [], "inhibitedBy": []},
+        }
+    ]
+    transport = _Transport(body=json.dumps(payload))
+    client = AlertmanagerHttpClient(timeout_seconds=5.0, transport=transport)
+    alerts = client.fetch(_am_server())
+    assert len(alerts) == 1
+    assert alerts[0].is_soft_state is True
+    assert alerts[0].in_maintenance is False
+    assert alerts[0].notifications_enabled is True
+
+
+def test_nagios_downtime_notifications_and_soft_state() -> None:
+    html = """
+    <table>
+    <tr>
+      <td><a href='extinfo.cgi?type=1&host=srv01'>srv01</a></td>
+      <td class='statusCRITICAL'>
+        <a href='extinfo.cgi?type=2&host=srv01&service=Disk'>Disk</a>
+      </td>
+      <td>0d 0h 10m 0s</td>
+      <td>1/3</td>
+      <td>CRITICAL - DOWNTIME NOTIFICATIONS DISABLED</td>
+    </tr>
+    <tr>
+      <td><a href='extinfo.cgi?type=1&host=srv02'>srv02</a></td>
+      <td class='statusWARNING'>
+        <a href='extinfo.cgi?type=2&host=srv02&service=Mem'>Mem</a>
+        <img src='nd.gif'>
+      </td>
+      <td>0d 0h 5m 0s</td>
+      <td>3/3</td>
+      <td>WARNING - SOFT memory pressure</td>
+    </tr>
+    </table>
+    """
+    transport = _Transport(body=html, content_type="text/html")
+    client = NagiosCgiHttpClient(timeout_seconds=5.0, transport=transport)
+    alerts = client.fetch(_nagios_server())
+    assert len(alerts) == 2
+    assert alerts[0].is_soft_state is True
+    assert alerts[0].in_maintenance is True
+    assert alerts[0].notifications_enabled is False
+    assert alerts[1].is_soft_state is True
+    assert alerts[1].in_maintenance is False
+    assert alerts[1].notifications_enabled is False

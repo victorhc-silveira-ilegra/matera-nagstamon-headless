@@ -66,9 +66,12 @@ class _NagiosHtmlParser(HTMLParser):
                     cell.hrefs.append(href)
         elif tag == "img" and self._td_stack:
             alt = mapping.get("alt") or mapping.get("title") or ""
-            if alt:
-                for cell in self._td_stack:
+            src = mapping.get("src") or ""
+            for cell in self._td_stack:
+                if alt:
                     cell.parts.append(alt)
+                if src:
+                    cell.parts.append(src)
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "td" and self._td_stack:
@@ -122,8 +125,21 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
             match = DURATION_RE.search(blob)
             duration = match.group(1) if match else ""
         info = row[-1].text if row else ""
-        if "ACKNOWLEDGED" in f"{blob} {href_blob}".upper():
+        full_text = f"{blob} {href_blob}".upper()
+        if "ACKNOWLEDGED" in full_text:
             ack = True
+        in_maintenance = "DOWNTIME" in full_text or "downtime" in href_blob.lower()
+        notifications_enabled = not (
+            "NOTIFICATIONS DISABLED" in full_text
+            or "nd.gif" in f"{blob} {href_blob}".lower()
+        )
+        is_soft_state = "SOFT" in full_text
+        if not is_soft_state:
+            attempt_match = re.search(r"\b(\d+)\s*/\s*(\d+)\b", blob)
+            if attempt_match:
+                cur, total = int(attempt_match.group(1)), int(attempt_match.group(2))
+                if 0 < cur < total:
+                    is_soft_state = True
         alertname = service or "NagiosAlert"
         app = host or "N/A"
         alerts.append(
@@ -137,6 +153,9 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
                 duration_str=duration,
                 acknowledged=ack,
                 host=host,
+                notifications_enabled=notifications_enabled,
+                in_maintenance=in_maintenance,
+                is_soft_state=is_soft_state,
             )
         )
     return alerts

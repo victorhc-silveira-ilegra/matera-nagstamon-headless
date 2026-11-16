@@ -17,7 +17,19 @@ Alertas operacionais possuem um tempo de carência (*hold-down*) antes de se tor
 - **Precedência**: O tipo de problema (palavras-chave na descrição/serviço) tem precedência sobre a severidade original reportada pelo monitor.
 - **Severidade INFO**: Severidade informativa nunca é elegível para snapshot ou paging.
 - **Início Desconhecido**: Alertas sem início determinável (`starts_at` ausente ou duração não parseável) são descartados por segurança.
-- **Teto Máximo**: Alertas com duração superior a `FILTER_DURATION_MAX_SECONDS` (padrão 86400s / 24h) são suprimidos como incidentes conhecidos de longa duração.
+- **Teto Máximo**: Alertas com duração igual ou superior a `FILTER_DURATION_MAX_SECONDS` (padrão 345600s / 4 dias) ou correspondentes ao regex `FILTER_DURATION_REGEX` (`([4-9]|\d{2,})d`) são suprimidos como incidentes conhecidos de longa duração.
+
+---
+
+## 2. Filtros Alinhados ao Nagstamon 3.16.2
+
+A política `AlertFilterPolicy` reproduz estritamente a aba de filtros da GUI oficial do Nagstamon:
+- **Regex de Serviços**: `FILTER_SERVICES_REGEX` (padrão `^(PodPending\s*|\s*KubeContainerWaiting)$`) descarta sumariamente incidentes de `PodPending` e `KubeContainerWaiting`.
+- **Regex de Duração**: `FILTER_DURATION_REGEX` (padrão `([4-9]|\d{2,})d`) descarta alertas persistentes com 4 dias ou mais (`>= 4d`).
+- **Estados de Monitor Suprimidos**:
+  - Alertas com notificações desativadas no monitor (`notifications_enabled=False`).
+  - Alertas em manutenção programada / downtime (`in_maintenance=True`).
+  - Alertas em estado transitório / soft state (`is_soft_state=True`, e.g. tentativa `1/3` ou estado `pending`).
 
 ---
 

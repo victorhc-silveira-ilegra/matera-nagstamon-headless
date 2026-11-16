@@ -23,6 +23,9 @@ class Alert:
     acknowledged: bool = False
     host: str = ""
     environment: str = ""
+    notifications_enabled: bool = True
+    in_maintenance: bool = False
+    is_soft_state: bool = False
 
     def __post_init__(self) -> None:
         server = self.server.strip()

@@ -66,9 +66,9 @@ flowchart TD
 O núcleo do sistema. Contém a lógica de negócio pura, sem dependências de frameworks, bibliotecas HTTP ou utilitários externos.
 
 - `entities/monitor_server.py`: Representação do servidor monitorado (URL, autenticação, tipo de monitor, estado ativo/inativo).
-- `entities/alert.py`: Entidade representativa do alarme coletado. Possui o método `dedup_key()`, gerando a assinatura canônica de unicidade SHA-256 baseada em `server` + `alertname` + `app` + `host`.
+- `entities/alert.py`: Entidade representativa do alarme coletado, incluindo metadados de ciclo de vida (`notifications_enabled`, `in_maintenance`, `is_soft_state`). Possui o método `dedup_key()`, gerando a assinatura canônica de unicidade SHA-256 baseada em `server` + `alertname` + `app` + `host`.
 - `entities/severity.py`: Enumeração normalizada de severidades operacionais.
-- `services/alert_filter.py`: Orquestrador de descarte de ruído, avaliando confirmação prévia (ack), janelas temporais de turno, dias úteis configurados e integridade de timestamps.
+- `services/alert_filter.py`: Orquestrador de descarte de ruído alinhado à GUI do Nagstamon 3.16.2: avalia confirmação prévia (ack), notificações ativas no monitor, manutenção programada (downtime), estados transitórios (*soft states*), regex de serviços ruidosos (`FILTER_SERVICES_REGEX`), regex de duração (`FILTER_DURATION_REGEX`), teto de duração de 4 dias (`FILTER_DURATION_MAX_SECONDS=345600`), janelas temporais de turno e integridade de timestamps.
 - `services/alert_hold.py`: Matriz de carência temporal (hold-down) por criticidade e severidade.
 - `services/alert_view.py`: Serviço de projeção canônica do snapshot em texto puro, calculando duração, tempo de SLA decorrido e identificadores estáveis.
 

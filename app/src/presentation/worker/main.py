@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import time
 from collections.abc import Callable, Sequence
 from zoneinfo import ZoneInfo
@@ -102,6 +103,16 @@ def build_use_case(settings: Settings) -> PollMonitorsUseCase:
             not_before=clock.now(),
             window_enabled=settings.filter_window_enabled,
             allow_past_active_alerts=settings.filter_window_allow_past_active_alerts,
+            filter_services_regex=(
+                re.compile(settings.filter_services_regex, re.IGNORECASE)
+                if settings.filter_services_regex
+                else None
+            ),
+            filter_duration_regex=(
+                re.compile(settings.filter_duration_regex, re.IGNORECASE)
+                if settings.filter_duration_regex
+                else None
+            ),
         ),
         dispatch_ledger=_dispatch_ledger(settings),
         alert_sound=sound,

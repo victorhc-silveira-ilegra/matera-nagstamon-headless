@@ -21,10 +21,11 @@ Todas as IAs, agentes autônomos e desenvolvedores devem seguir estritamente as 
    - O domínio e a aplicação não realizam chamadas de logging nem acessam bibliotecas de infraestrutura. Ciclos ociosos não devem emitir logs de início/fim ruidosos.
    - Logs são gravados em stdout e em arquivo diário gerenciado em `LOG_DIR` (`logs/nagstamon-YYYY-MM-DD.log`).
 8. **Paridade Canônica de Snapshots**: O texto emitido no terminal (`stdout`) e a mensagem transmitida via webhook do Google Chat compartilham rigorosamente a mesma formatação em texto puro definida em `domain/services/alert_view.py`. Deduplicação persistente via ledger transacional (`claim` -> `confirm` -> `release`) utilizando fingerprint SHA-256 (`server`/`alertname`/`app`/`host`).
-9. **Filtros Temporais e Carência SLA**:
+9. **Filtros Temporais, Carência SLA e Filtros Nagstamon 3.16.2**:
    - Resolução de data/hora exclusivamente em Python sobre `starts_at` ou parse de `duration_str`.
    - Janela comercial controlada por `WINDOW_*` (`WINDOW_ALLOW_PAST_ACTIVE_ALERTS=true` padrão para capturar incidentes ativos pré-existentes ao boot).
    - Carência de hold-down por criticidade/severidade: Muito Crítico = 10 min (`FILTER_HOLD_FAST_SECONDS`), Mediano/Crítico = 15 min (`FILTER_HOLD_CRITICAL_SECONDS`), Baixo/Warning = 20 min (`FILTER_HOLD_WARNING_SECONDS`). Alertas com severidade `info` ou com instante de início indeterminado são sumariamente descartados.
+   - Filtros idênticos ao Nagstamon GUI: descarte incondicional de serviços `PodPending` e `KubeContainerWaiting` (`FILTER_SERVICES_REGEX`), descarte de alertas antigos com 4 dias ou mais (`FILTER_DURATION_REGEX=([4-9]|\d{2,})d` e `FILTER_DURATION_MAX_SECONDS=345600`), descarte de estados transitórios (*soft states*), manutenção programada/downtime e notificações desativadas.
 
 ## Comandos Operacionais
 
