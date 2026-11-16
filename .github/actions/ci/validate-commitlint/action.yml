@@ -17,11 +17,11 @@ runs:
         else
           BEFORE="${{ github.event.before }}"
           AFTER="${{ github.event.after }}"
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            git log -1 --pretty=format:%B > /tmp/commit_msg.txt
-            bash linters/git-hooks/commitlint.sh /tmp/commit_msg.txt
-          else
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null && git merge-base --is-ancestor "$BEFORE" "$AFTER" 2>/dev/null; then
             npx --yes -p @commitlint/cli -p @commitlint/config-conventional \
               commitlint --config linters/commitlint.config.mjs --from "$BEFORE" --to "$AFTER"
+          else
+            git log -1 --pretty=format:%B > /tmp/commit_msg.txt
+            bash linters/git-hooks/commitlint.sh /tmp/commit_msg.txt
           fi
         fi
