@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.17.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.16.0...v1.17.0) (2026-11-16)
+
+### Features
+
+* **filters:** refina filtro k8s para namespaces auxiliares e sintomas secundarios ([6cd6f6a](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/6cd6f6a23b5939445a531b8b90988f4b79c9ab95))
+
+### Bug Fixes
+
+* **ci:** adiciona fallback resiliente para commits e force push no commitlint ([aa56b27](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/aa56b27801f1daabe89ea68795c558872755646d))
+
 ## [1.16.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.15.0...v1.16.0) (2026-11-16)
 
 ### Features
