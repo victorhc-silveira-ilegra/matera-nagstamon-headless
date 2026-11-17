@@ -57,7 +57,14 @@ def _to_alert(server: MonitorServer, item: dict[str, Any]) -> Alert:
         or labels.get("namespace")
         or "N/A"
     )
-    app = str(labels.get("application") or host)
+    app = str(
+        labels.get("application")
+        or labels.get("app")
+        or labels.get("deployment")
+        or labels.get("container")
+        or labels.get("job_name")
+        or host
+    )
     severity_raw = str(labels.get("severity") or "WARNING")
     starts_at = _parse_starts_at(item.get("startsAt"))
     status_text = str(

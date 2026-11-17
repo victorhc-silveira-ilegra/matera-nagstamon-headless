@@ -1,10 +1,37 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 
 from domain.entities.errors import DomainValidationError
 from domain.entities.severity import Severity
+
+RE_EC2 = re.compile(r"^(.+?)-i-[0-9a-f]{8,17}$", re.IGNORECASE)
+RE_K8S_DEPLOY = re.compile(r"^(.+?)-[0-9a-f]{8,10}-[a-z0-9]{5}$", re.IGNORECASE)
+RE_K8S_HASH_5 = re.compile(
+    r"^(.+?)-(?=[a-z0-9]*\d)(?=[a-z0-9]*[a-z])[a-z0-9]{5}$", re.IGNORECASE
+)
+RE_K8S_STATEFUL = re.compile(r"^(.+?)-\d+$", re.IGNORECASE)
+
+
+def canonicalize_target(raw: str) -> str:
+    cleaned = raw.strip()
+    if not cleaned:
+        return ""
+    ec2_match = RE_EC2.match(cleaned)
+    if ec2_match:
+        return ec2_match.group(1)
+    deploy_match = RE_K8S_DEPLOY.match(cleaned)
+    if deploy_match:
+        return deploy_match.group(1)
+    hash_match = RE_K8S_HASH_5.match(cleaned)
+    if hash_match:
+        return hash_match.group(1)
+    stateful_match = RE_K8S_STATEFUL.match(cleaned)
+    if stateful_match:
+        return stateful_match.group(1)
+    return cleaned
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,5 +74,10 @@ class Alert:
         object.__setattr__(self, "host", self.host.strip())
         object.__setattr__(self, "environment", self.environment.strip().upper())
 
+    def canonical_workload(self) -> str:
+        return canonicalize_target(self.host) or canonicalize_target(self.app)
+
     def dedup_key(self) -> str:
-        return f"{self.server}\0{self.alertname}\0{self.app}\0{self.host}"
+        app = canonicalize_target(self.app)
+        target = canonicalize_target(self.host)
+        return f"{self.server}\0{self.alertname}\0{app}\0{target}"

@@ -48,7 +48,7 @@ class PollMonitorsUseCase:
         filter_policy: AlertFilterPolicy | None = None,
         dispatch_ledger: AlertDispatchLedgerPort | None = None,
         alert_sound: AlertSoundPort | None = None,
-        dedup_window_minutes: int = 30,
+        dedup_window_minutes: int = 240,
     ) -> None:
         self._server_config = server_config
         self._monitor_client = monitor_client

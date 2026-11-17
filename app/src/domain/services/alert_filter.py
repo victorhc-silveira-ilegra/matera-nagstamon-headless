@@ -39,7 +39,7 @@ KUBE_AUXILIARY_NAMESPACES = re.compile(
     r"(?i)(?:^|/|\b)(?:[a-z0-9_-]+-(?:logging|velero)|logging|velero|kube-system|cert-manager)(?:/|\b|$)"
 )
 KUBE_SECONDARY_WARNINGS = re.compile(
-    r"(?i)(?:replicas?\s*mismatch|deployment\s*replicas?|rollout\s*stuck|daemonset\s*rollout|job\s*not\s*completed|replicasmismatch|deploymentreplicas|rolloutstuck|daemonsetrollout|jobnotcompleted)"
+    r"(?i)(?:replicas?\s*mismatch|deployment\s*replicas?|rollout\s*stuck|daemonset\s*rollout|job\s*not\s*completed|replicasmismatch|deploymentreplicas|rolloutstuck|daemonsetrollout|jobnotcompleted|errormessages)"
 )
 K8S_SRE_ALLOWED = re.compile(
     r"(?i)(?:"

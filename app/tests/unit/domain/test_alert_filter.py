@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from domain.entities.alert import Alert
+from domain.entities.alert import Alert, canonicalize_target
 from domain.entities.errors import DomainValidationError
 from domain.entities.monitor_server import MonitorServer
 from domain.entities.severity import Severity
@@ -114,6 +114,52 @@ def test_alert_dedup_key_stable_and_ignores_starts_at() -> None:
     assert first.dedup_key() == "prod\0DiskFull\0db01\0"
     assert other.dedup_key() != first.dedup_key()
     assert other_host.dedup_key() != first.dedup_key()
+
+
+def test_canonicalize_target_patterns() -> None:
+    assert canonicalize_target("") == ""
+    assert canonicalize_target("   ") == ""
+    assert (
+        canonicalize_target("callback-transaction-job-i-0a13980ff01977f00")
+        == "callback-transaction-job"
+    )
+    assert canonicalize_target("spi-qrcodes2-64fb8478fd-vhwvc") == "spi-qrcodes2"
+    assert canonicalize_target("autoinvest-kafka-mr9hl") == "autoinvest-kafka"
+    assert canonicalize_target("kafka-0") == "kafka"
+    assert canonicalize_target("app-prd-admin") == "app-prd-admin"
+
+
+def test_alert_canonical_workload_and_dedup_key_k8s_and_ec2() -> None:
+    k8s_pod_1 = _alert(
+        app="spi-qrcodes2",
+        host="spi-qrcodes2-64fb8478fd-vhwvc",
+        alertname="KubePodCrashLooping",
+    )
+    k8s_pod_2 = _alert(
+        app="spi-qrcodes2",
+        host="spi-qrcodes2-64fb8478fd-vps89",
+        alertname="KubePodCrashLooping",
+    )
+    assert k8s_pod_1.canonical_workload() == "spi-qrcodes2"
+    assert k8s_pod_2.canonical_workload() == "spi-qrcodes2"
+    assert k8s_pod_1.dedup_key() == k8s_pod_2.dedup_key()
+
+    ec2_inst_1 = _alert(
+        app="callback-job",
+        host="callback-job-i-0a13980ff01977f00",
+        alertname="APP ERROR LOG",
+    )
+    ec2_inst_2 = _alert(
+        app="callback-job",
+        host="callback-job-i-0ac17363d8143a741",
+        alertname="APP ERROR LOG",
+    )
+    assert ec2_inst_1.canonical_workload() == "callback-job"
+    assert ec2_inst_2.canonical_workload() == "callback-job"
+    assert ec2_inst_1.dedup_key() == ec2_inst_2.dedup_key()
+
+    app_fallback = _alert(app="billing-service", host="")
+    assert app_fallback.canonical_workload() == "billing-service"
 
 
 def test_filter_status_info() -> None:

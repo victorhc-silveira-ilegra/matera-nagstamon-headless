@@ -180,7 +180,7 @@ class Settings:
         log_dir = Path(log_dir_raw).expanduser() if log_dir_raw else None
         dedup_enabled = _parse_bool(os.environ.get("DEDUP_ENABLED", "true"))
         dedup_window_minutes = _parse_positive_int(
-            os.environ.get("DEDUP_WINDOW_MINUTES", "30"),
+            os.environ.get("DEDUP_WINDOW_MINUTES", "240"),
             "DEDUP_WINDOW_MINUTES",
         )
         filter_window_enabled = _parse_bool(os.environ.get("WINDOW_ENABLED", "true"))

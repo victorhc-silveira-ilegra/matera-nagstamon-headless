@@ -105,7 +105,7 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.log_file is None
     assert settings.log_dir == Path("logs")
     assert settings.dedup_enabled is True
-    assert settings.dedup_window_minutes == 30
+    assert settings.dedup_window_minutes == 240
     assert settings.filter_window_enabled is True
     assert settings.filter_window_start.hour == 13
     assert settings.filter_window_start.minute == 30
