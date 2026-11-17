@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.17.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.17.0...v1.17.1) (2026-11-17)
+
+### Bug Fixes
+
+* **dedup:** normaliza workload canonico em dedup_key e amplia janela para 4h ([30949e4](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/30949e458e9762c00eb4e322809adaf764707b2b))
+
 ## [1.17.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.16.0...v1.17.0) (2026-11-16)
 
 ### Features
