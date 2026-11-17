@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.17.2](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.17.1...v1.17.2) (2026-11-17)
+
+### Bug Fixes
+
+* **dedup:** unifica incident_key em nivel de workload k8s e servico base nagios ([347e690](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/347e690eea171108e98e0f69bd5d34ffe4c8b951))
+
 ## [1.17.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.17.0...v1.17.1) (2026-11-17)
 
 ### Bug Fixes
