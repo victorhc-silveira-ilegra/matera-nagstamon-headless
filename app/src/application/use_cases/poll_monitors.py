@@ -26,16 +26,40 @@ def fingerprint_for(alert: Alert) -> str:
     return hashlib.sha256(alert.dedup_key().encode()).hexdigest()
 
 
+def _alert_priority_rank(alert: Alert) -> tuple[int, int, str]:
+    severity_order = 0 if alert.severity.value == "CRITICAL" else 1
+    name = alert.alertname.lower()
+    if any(
+        k in name
+        for k in (
+            "allreplicasdown",
+            "deploymentcrashloopbackoff",
+            "oomkilled",
+            "imagepull",
+            "app health",
+        )
+    ):
+        name_order = 0
+    elif any(k in name for k in ("crashloop", "podnotready", "backoff")):
+        name_order = 1
+    elif any(k in name for k in ("targetdown", "errormessages")):
+        name_order = 2
+    else:
+        name_order = 3
+    return severity_order, name_order, alert.alertname.lower()
+
+
 def _unique_by_dedup_key(alerts: Sequence[Alert]) -> tuple[list[Alert], int]:
-    seen: set[str] = set()
-    unique: list[Alert] = []
+    groups: dict[str, list[Alert]] = {}
     for alert in alerts:
-        key = alert.dedup_key()
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(alert)
-    return unique, len(alerts) - len(unique)
+        groups.setdefault(alert.dedup_key(), []).append(alert)
+    unique: list[Alert] = []
+    intra_skipped = 0
+    for group in groups.values():
+        best = min(group, key=_alert_priority_rank)
+        unique.append(best)
+        intra_skipped += len(group) - 1
+    return unique, intra_skipped
 
 
 class PollMonitorsUseCase:

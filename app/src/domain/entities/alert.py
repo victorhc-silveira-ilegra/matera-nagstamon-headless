@@ -13,6 +13,13 @@ RE_K8S_HASH_5 = re.compile(
     r"^(.+?)-(?=[a-z0-9]*\d)(?=[a-z0-9]*[a-z])[a-z0-9]{5}$", re.IGNORECASE
 )
 RE_K8S_STATEFUL = re.compile(r"^(.+?)-\d+$", re.IGNORECASE)
+RE_ENV_PREFIX = re.compile(r"^(?:hml|prd|prod|qa|dev|uat|stg)[-_]", re.IGNORECASE)
+RE_VARIANT_SUFFIX = re.compile(r"[-_](?:spb|mp|si|bms|mb)$", re.IGNORECASE)
+RE_K8S_SERVER = re.compile(r"(?i)alertmanager")
+RE_K8S_TERMS = re.compile(r"(?i)(?:kube|k8s|pod|deployment|daemonset|statefulset)")
+RE_WORKLOAD_IN_TEXT = re.compile(
+    r"(?i)(?:deployment|pod|container|job|daemonset|statefulset)[:\s/]*([a-z0-9][a-z0-9_-]+)"
+)
 
 
 def canonicalize_target(raw: str) -> str:
@@ -32,6 +39,15 @@ def canonicalize_target(raw: str) -> str:
     if stateful_match:
         return stateful_match.group(1)
     return cleaned
+
+
+def normalize_service_base(raw: str) -> str:
+    cleaned = canonicalize_target(raw)
+    if not cleaned:
+        return ""
+    cleaned = RE_ENV_PREFIX.sub("", cleaned)
+    cleaned = RE_VARIANT_SUFFIX.sub("", cleaned)
+    return cleaned.strip()
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,10 +90,37 @@ class Alert:
         object.__setattr__(self, "host", self.host.strip())
         object.__setattr__(self, "environment", self.environment.strip().upper())
 
+    def is_kubernetes(self) -> bool:
+        if RE_K8S_SERVER.search(self.server):
+            return True
+        return bool(RE_K8S_TERMS.search(f"{self.alertname} {self.host} {self.app}"))
+
     def canonical_workload(self) -> str:
-        return canonicalize_target(self.host) or canonicalize_target(self.app)
+        if self.is_kubernetes():
+            full_text = f"{self.desc} {self.status_text}"
+            match = RE_WORKLOAD_IN_TEXT.search(full_text)
+            if match and (
+                "kube-state-metrics" in self.host.lower()
+                or not self.host
+                or self.host == self.server
+            ):
+                return canonicalize_target(match.group(1))
+            host_canon = canonicalize_target(self.host)
+            if host_canon and "kube-state-metrics" not in host_canon.lower():
+                return host_canon
+            app_canon = canonicalize_target(self.app)
+            if app_canon and "kube-state-metrics" not in app_canon.lower():
+                return app_canon
+            return host_canon or app_canon
+        return normalize_service_base(self.host or self.app)
+
+    def incident_key(self) -> str:
+        if self.is_kubernetes():
+            workload = self.canonical_workload() or "workload"
+            return f"{self.server}\0k8s\0{workload}"
+        app = normalize_service_base(self.app)
+        host = normalize_service_base(self.host)
+        return f"{self.server}\0{self.alertname}\0{app}\0{host}"
 
     def dedup_key(self) -> str:
-        app = canonicalize_target(self.app)
-        target = canonicalize_target(self.host)
-        return f"{self.server}\0{self.alertname}\0{app}\0{target}"
+        return self.incident_key()

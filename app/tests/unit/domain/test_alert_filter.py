@@ -161,6 +161,40 @@ def test_alert_canonical_workload_and_dedup_key_k8s_and_ec2() -> None:
     app_fallback = _alert(app="billing-service", host="")
     assert app_fallback.canonical_workload() == "billing-service"
 
+    k8s_srv = _alert(server="prod-alertmanager-main", host="node1", app="node1")
+    assert k8s_srv.is_kubernetes() is True
+
+    ksm_with_text = _alert(
+        server="prod-alertmanager-main",
+        host="monitoring-kube-state-metrics-57959fd699-kfwt2",
+        app="monitoring-kube-state-metrics",
+        status_text="Namespace prd, deployment: auth-api replicas down",
+    )
+    assert ksm_with_text.canonical_workload() == "auth-api"
+
+    ksm_app_fallback = _alert(
+        server="prod-alertmanager-main",
+        host="monitoring-kube-state-metrics-57959fd699-kfwt2",
+        app="auth-api",
+        status_text="generic failure",
+    )
+    assert ksm_app_fallback.canonical_workload() == "auth-api"
+
+    ksm_pure = _alert(
+        server="prod-alertmanager-main",
+        host="monitoring-kube-state-metrics",
+        app="monitoring-kube-state-metrics",
+        status_text="pure failure",
+    )
+    assert ksm_pure.canonical_workload() == "monitoring-kube-state-metrics"
+
+    empty_k8s = _alert(
+        server="prod-alertmanager-main",
+        host="",
+        app="cluster-app",
+    )
+    assert empty_k8s.incident_key() == "prod-alertmanager-main\0k8s\0cluster-app"
+
 
 def test_filter_status_info() -> None:
     policy = AlertFilterPolicy()

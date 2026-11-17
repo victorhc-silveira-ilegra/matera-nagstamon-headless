@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 
 from application.use_cases.poll_monitors import (
     PollMonitorsUseCase,
+    _alert_priority_rank,
+    _unique_by_dedup_key,
     fingerprint_for,
 )
 from domain.entities.alert import Alert
@@ -356,3 +358,52 @@ def test_sound_skipped_when_dedup_off_and_empty() -> None:
     sound = FakeSound()
     _use_case(alerts=[], sink=FakeAlertSink(), ledger=None, sound=sound).execute()
     assert sound.calls == 0
+
+
+def test_unique_by_dedup_key_and_priority_ranks() -> None:
+    critical_deploy = _alert(
+        server="prd-alertmanager",
+        alertname="AllReplicasDown",
+        app="auth-api",
+        host="monitoring-kube-state-metrics-57959fd699-kfwt2",
+        status_text="deployment: auth-api down",
+        severity=Severity("CRITICAL"),
+    )
+    warning_crash = _alert(
+        server="prd-alertmanager",
+        alertname="KubePodCrashLooping",
+        app="auth-api",
+        host="auth-api-64fb8478fd-vhwvc",
+        severity=Severity("WARNING"),
+    )
+    warning_target = _alert(
+        server="prd-alertmanager",
+        alertname="TargetDown",
+        app="auth-api",
+        host="auth-api",
+        severity=Severity("WARNING"),
+    )
+    other_alert = _alert(
+        server="prd-alertmanager",
+        alertname="CustomMetricsFailed",
+        app="auth-api",
+        host="auth-api",
+        severity=Severity("WARNING"),
+    )
+
+    rank_0 = _alert_priority_rank(critical_deploy)
+    rank_1 = _alert_priority_rank(warning_crash)
+    rank_2 = _alert_priority_rank(warning_target)
+    rank_3 = _alert_priority_rank(other_alert)
+
+    assert rank_0[0] == 0 and rank_0[1] == 0
+    assert rank_1[0] == 1 and rank_1[1] == 1
+    assert rank_2[0] == 1 and rank_2[1] == 2
+    assert rank_3[0] == 1 and rank_3[1] == 3
+
+    unique, skipped = _unique_by_dedup_key(
+        [warning_crash, other_alert, warning_target, critical_deploy]
+    )
+    assert skipped == 3
+    assert len(unique) == 1
+    assert unique[0].alertname == "AllReplicasDown"
