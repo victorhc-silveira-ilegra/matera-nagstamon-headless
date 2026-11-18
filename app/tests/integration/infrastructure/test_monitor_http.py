@@ -499,3 +499,64 @@ def test_nagios_downtime_notifications_and_soft_state() -> None:
     assert alerts[1].is_soft_state is True
     assert alerts[1].in_maintenance is False
     assert alerts[1].notifications_enabled is False
+
+
+def test_nagios_host_level_flag_propagation_and_checks_disabled() -> None:
+    html = """
+    <table>
+    <tr>
+      <td>
+        <a href='extinfo.cgi?type=1&host=srv-maint'>srv-maint</a>
+        <img src='downtime.gif' alt='DOWNTIME'>
+        <img src='cd.gif' alt='CHECKS DISABLED'>
+        <img src='ack.gif' alt='ACKNOWLEDGED'>
+        <img src='nd.gif' alt='NOTIFICATIONS DISABLED'>
+      </td>
+      <td class='statusCRITICAL'>
+        <a href='extinfo.cgi?type=2&host=srv-maint&service=ServiceA'>ServiceA</a>
+      </td>
+      <td>0d 0h 10m 0s</td>
+      <td>3/3</td>
+      <td>CRITICAL - failure</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td class='statusWARNING'>
+        <a href='extinfo.cgi?type=2&host=srv-maint&service=ServiceB'>ServiceB</a>
+      </td>
+      <td>0d 0h 10m 0s</td>
+      <td>3/3</td>
+      <td>WARNING - warning</td>
+    </tr>
+    <tr>
+      <td>
+        <a href='extinfo.cgi?type=1&host=srv-clean'>srv-clean</a>
+      </td>
+      <td class='statusCRITICAL'>
+        <a href='extinfo.cgi?type=2&host=srv-clean&service=ServiceC'>ServiceC</a>
+      </td>
+      <td>0d 0h 10m 0s</td>
+      <td>3/3</td>
+      <td>CRITICAL - failure</td>
+    </tr>
+    </table>
+    """
+    transport = _Transport(body=html, content_type="text/html")
+    client = NagiosCgiHttpClient(timeout_seconds=5.0, transport=transport)
+    alerts = client.fetch(_nagios_server())
+    assert len(alerts) == 3
+    assert alerts[0].host == "srv-maint"
+    assert alerts[0].in_maintenance is True
+    assert alerts[0].checks_enabled is False
+    assert alerts[0].acknowledged is True
+    assert alerts[0].notifications_enabled is False
+    assert alerts[1].host == "srv-maint"
+    assert alerts[1].in_maintenance is True
+    assert alerts[1].checks_enabled is False
+    assert alerts[1].acknowledged is True
+    assert alerts[1].notifications_enabled is False
+    assert alerts[2].host == "srv-clean"
+    assert alerts[2].in_maintenance is False
+    assert alerts[2].checks_enabled is True
+    assert alerts[2].acknowledged is False
+    assert alerts[2].notifications_enabled is True

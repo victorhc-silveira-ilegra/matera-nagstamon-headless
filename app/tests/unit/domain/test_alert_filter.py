@@ -833,6 +833,9 @@ def test_filter_nagstamon_flags_suppression() -> None:
     disabled_notif = _alert(notifications_enabled=False, **base_kwargs)
     assert policy.is_filtered(disabled_notif, now)
 
+    disabled_checks = _alert(checks_enabled=False, **base_kwargs)
+    assert policy.is_filtered(disabled_checks, now)
+
     in_maint = _alert(in_maintenance=True, **base_kwargs)
     assert policy.is_filtered(in_maint, now)
 

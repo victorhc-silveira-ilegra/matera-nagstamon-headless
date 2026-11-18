@@ -175,6 +175,8 @@ class AlertFilterPolicy:
             return True
         if not alert.notifications_enabled:
             return True
+        if not alert.checks_enabled:
+            return True
         if alert.in_maintenance:
             return True
         if alert.is_soft_state:

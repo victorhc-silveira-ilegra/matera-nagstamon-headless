@@ -94,6 +94,10 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
     parser.close()
     alerts: list[Alert] = []
     last_host = ""
+    last_host_ack = False
+    last_host_in_maintenance = False
+    last_host_notifications_disabled = False
+    last_host_checks_disabled = False
     for row in parser.rows:
         severity: str | None = None
         ack = False
@@ -111,8 +115,38 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
             host = row[0].text
         if not host:
             host = last_host
-        if host:
+        if host and host != last_host:
             last_host = host
+            host_cell = (
+                row[0]
+                if (
+                    row
+                    and (
+                        row[0].text.strip() == host
+                        or any(
+                            "type=1" in h or f"host={host}" in h for h in row[0].hrefs
+                        )
+                    )
+                )
+                else None
+            )
+            if host_cell is not None:
+                h_text = f"{host_cell.text} {' '.join(host_cell.hrefs)}".upper()
+                last_host_ack = "ACKNOWLEDGED" in h_text or "ack.gif" in h_text.lower()
+                last_host_in_maintenance = (
+                    "DOWNTIME" in h_text or "downtime" in h_text.lower()
+                )
+                last_host_notifications_disabled = (
+                    "NOTIFICATIONS DISABLED" in h_text or "nd.gif" in h_text.lower()
+                )
+                last_host_checks_disabled = (
+                    "CHECKS DISABLED" in h_text or "cd.gif" in h_text.lower()
+                )
+            else:
+                last_host_ack = False
+                last_host_in_maintenance = False
+                last_host_notifications_disabled = False
+                last_host_checks_disabled = False
         service = _query_param(href_blob, "service")
         if not service and len(row) > 1:
             service = row[1].text
@@ -126,12 +160,22 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
             duration = match.group(1) if match else ""
         info = row[-1].text if row else ""
         full_text = f"{blob} {href_blob}".upper()
-        if "ACKNOWLEDGED" in full_text:
+        if "ACKNOWLEDGED" in full_text or last_host_ack:
             ack = True
-        in_maintenance = "DOWNTIME" in full_text or "downtime" in href_blob.lower()
+        in_maintenance = (
+            "DOWNTIME" in full_text
+            or "downtime" in href_blob.lower()
+            or last_host_in_maintenance
+        )
         notifications_enabled = not (
             "NOTIFICATIONS DISABLED" in full_text
             or "nd.gif" in f"{blob} {href_blob}".lower()
+            or last_host_notifications_disabled
+        )
+        checks_enabled = not (
+            "CHECKS DISABLED" in full_text
+            or "cd.gif" in f"{blob} {href_blob}".lower()
+            or last_host_checks_disabled
         )
         is_soft_state = "SOFT" in full_text
         if not is_soft_state:
@@ -156,6 +200,7 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
                 notifications_enabled=notifications_enabled,
                 in_maintenance=in_maintenance,
                 is_soft_state=is_soft_state,
+                checks_enabled=checks_enabled,
             )
         )
     return alerts

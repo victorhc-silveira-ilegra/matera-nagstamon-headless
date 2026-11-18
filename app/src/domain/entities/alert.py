@@ -69,6 +69,7 @@ class Alert:
     notifications_enabled: bool = True
     in_maintenance: bool = False
     is_soft_state: bool = False
+    checks_enabled: bool = True
 
     def __post_init__(self) -> None:
         server = self.server.strip()
