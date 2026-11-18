@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from html.parser import HTMLParser
 from urllib.parse import unquote
 
@@ -11,6 +12,7 @@ from domain.entities.alert import Alert
 from domain.entities.monitor_server import MonitorServer
 from domain.entities.severity import Severity
 from infrastructure.adapters.http_client import build_http_client, log_fetch_failed
+from infrastructure.adapters.monitor_circuit_breaker import MonitorCircuitBreaker
 
 CGI_SUFFIX = "/cgi-bin/status.cgi?host=all&servicestatustypes=253&limit=0"
 DURATION_RE = re.compile(r"(\d+d\s+\d+h\s+\d+m(?:\s+\d+s)?)", re.IGNORECASE)
@@ -98,6 +100,7 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
     last_host_in_maintenance = False
     last_host_notifications_disabled = False
     last_host_checks_disabled = False
+    last_host_down_or_unreachable = False
     for row in parser.rows:
         severity: str | None = None
         ack = False
@@ -132,6 +135,7 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
             )
             if host_cell is not None:
                 h_text = f"{host_cell.text} {' '.join(host_cell.hrefs)}".upper()
+                h_classes = host_cell.classes.upper()
                 last_host_ack = "ACKNOWLEDGED" in h_text or "ack.gif" in h_text.lower()
                 last_host_in_maintenance = (
                     "DOWNTIME" in h_text or "downtime" in h_text.lower()
@@ -142,11 +146,20 @@ def _alerts_from_html(server: MonitorServer, html: str) -> list[Alert]:
                 last_host_checks_disabled = (
                     "CHECKS DISABLED" in h_text or "cd.gif" in h_text.lower()
                 )
+                last_host_down_or_unreachable = (
+                    "STATUSHOSTDOWN" in h_classes
+                    or "STATUSHOSTUNREACHABLE" in h_classes
+                    or "down.gif" in h_text.lower()
+                    or "unreachable.gif" in h_text.lower()
+                )
             else:
                 last_host_ack = False
                 last_host_in_maintenance = False
                 last_host_notifications_disabled = False
                 last_host_checks_disabled = False
+                last_host_down_or_unreachable = False
+        if last_host_down_or_unreachable:
+            continue
         service = _query_param(href_blob, "service")
         if not service and len(row) > 1:
             service = row[1].text
@@ -211,16 +224,21 @@ class NagiosCgiHttpClient:
         self,
         timeout_seconds: float,
         transport: httpx.BaseTransport | None = None,
+        circuit_breaker: MonitorCircuitBreaker | None = None,
     ) -> None:
         self._timeout_seconds = timeout_seconds
         self._transport = transport
+        self._circuit_breaker = circuit_breaker
 
     def fetch(self, server: MonitorServer) -> list[Alert]:
         url = f"{server.url.rstrip('/')}{CGI_SUFFIX}"
         client = build_http_client(server, self._timeout_seconds, self._transport)
+        now_dt = datetime.now().astimezone()
         try:
             response = client.get(url)
             if response.status_code != 200:
+                if self._circuit_breaker is not None:
+                    self._circuit_breaker.record_failure(server.name, now_dt)
                 log_fetch_failed(
                     server,
                     error_type="http_status",
@@ -228,8 +246,12 @@ class NagiosCgiHttpClient:
                     exc_info=logging.getLogger(__name__).isEnabledFor(logging.DEBUG),
                 )
                 return []
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.record_success(server.name)
             return _alerts_from_html(server, response.text)
         except httpx.HTTPError as exc:
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.record_failure(server.name, now_dt)
             log_fetch_failed(
                 server,
                 error_type=type(exc).__name__,

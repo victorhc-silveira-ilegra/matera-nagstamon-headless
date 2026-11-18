@@ -13,6 +13,7 @@ from infrastructure.adapters.http_client import (
     DnsResolvingProxyTransport,
     build_http_client,
 )
+from infrastructure.adapters.monitor_circuit_breaker import MonitorCircuitBreaker
 from infrastructure.adapters.nagios_cgi_http import NagiosCgiHttpClient
 from infrastructure.logging.events import MONITOR_FETCH_FAILED
 
@@ -539,6 +540,17 @@ def test_nagios_host_level_flag_propagation_and_checks_disabled() -> None:
       <td>3/3</td>
       <td>CRITICAL - failure</td>
     </tr>
+    <tr>
+      <td class='statusHOSTDOWN'>
+        <a href='extinfo.cgi?type=1&host=srv-down'>srv-down</a>
+      </td>
+      <td class='statusCRITICAL'>
+        <a href='extinfo.cgi?type=2&host=srv-down&service=ServiceD'>ServiceD</a>
+      </td>
+      <td>0d 0h 10m 0s</td>
+      <td>3/3</td>
+      <td>CRITICAL - failure</td>
+    </tr>
     </table>
     """
     transport = _Transport(body=html, content_type="text/html")
@@ -560,3 +572,56 @@ def test_nagios_host_level_flag_propagation_and_checks_disabled() -> None:
     assert alerts[2].checks_enabled is True
     assert alerts[2].acknowledged is False
     assert alerts[2].notifications_enabled is True
+
+
+def test_monitor_clients_with_circuit_breaker() -> None:
+    from datetime import UTC, datetime
+
+    now = datetime(2026, 8, 14, 17, 0, 0, tzinfo=UTC)
+    breaker = MonitorCircuitBreaker(max_failures=1, cooldown_seconds=300)
+
+    t_ok = _Transport(body="[]", content_type="application/json")
+    am_ok = AlertmanagerHttpClient(
+        timeout_seconds=5.0, transport=t_ok, circuit_breaker=breaker
+    )
+    assert am_ok.fetch(_am_server()) == []
+    assert breaker.is_available("am", now)
+
+    t_err = _Transport(status_code=500, content_type="application/json")
+    am_err = AlertmanagerHttpClient(
+        timeout_seconds=5.0, transport=t_err, circuit_breaker=breaker
+    )
+    assert am_err.fetch(_am_server()) == []
+    assert not breaker.is_available("am", now)
+
+    req_am = httpx.Request("GET", "http://am.example")
+    t_am_exc = _Transport(error=httpx.ConnectError("down", request=req_am))
+    am_exc = AlertmanagerHttpClient(
+        timeout_seconds=5.0, transport=t_am_exc, circuit_breaker=breaker
+    )
+    assert am_exc.fetch(_am_server()) == []
+
+    breaker2 = MonitorCircuitBreaker(max_failures=1, cooldown_seconds=300)
+    t_nag_ok = _Transport(
+        body="<table><tr><td class='statusOK'>ok</td></tr></table>",
+        content_type="text/html",
+    )
+    nag_ok = NagiosCgiHttpClient(
+        timeout_seconds=5.0, transport=t_nag_ok, circuit_breaker=breaker2
+    )
+    assert nag_ok.fetch(_nagios_server()) == []
+    assert breaker2.is_available("core", now)
+
+    t_nag_err = _Transport(status_code=500, content_type="text/html")
+    nag_err = NagiosCgiHttpClient(
+        timeout_seconds=5.0, transport=t_nag_err, circuit_breaker=breaker2
+    )
+    assert nag_err.fetch(_nagios_server()) == []
+    assert not breaker2.is_available("core", now)
+
+    req = httpx.Request("GET", "http://nagios.example")
+    t_nag_exc = _Transport(error=httpx.ConnectError("down", request=req))
+    nag_exc = NagiosCgiHttpClient(
+        timeout_seconds=5.0, transport=t_nag_exc, circuit_breaker=breaker2
+    )
+    assert nag_exc.fetch(_nagios_server()) == []

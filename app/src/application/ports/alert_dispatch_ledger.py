@@ -13,7 +13,13 @@ class AlertDispatchLedgerPort(Protocol):
         window_minutes: int,
     ) -> bool: ...
 
-    def confirm(self, *, fingerprint: str, now: datetime) -> None: ...
+    def confirm(
+        self,
+        *,
+        fingerprint: str,
+        now: datetime,
+        meta: dict[str, str] | None = None,
+    ) -> None: ...
 
     def release(self, *, fingerprint: str) -> None: ...
 
@@ -23,4 +29,5 @@ class AlertDispatchLedgerPort(Protocol):
         active_fingerprints: frozenset[str],
         now: datetime,
         window_minutes: int,
-    ) -> None: ...
+        polled_servers: frozenset[str] | None = None,
+    ) -> list[dict[str, str]]: ...

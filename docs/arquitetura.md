@@ -71,6 +71,8 @@ O núcleo do sistema. Contém a lógica de negócio pura, sem dependências de f
 - `services/alert_filter.py`: Orquestrador de descarte de ruído alinhado à GUI do Nagstamon 3.16.2: avalia confirmação prévia (ack), notificações ativas no monitor, manutenção programada (downtime), estados transitórios (*soft states*), regex de serviços ruidosos (`FILTER_SERVICES_REGEX`), regex de duração (`FILTER_DURATION_REGEX`), teto de duração de 4 dias (`FILTER_DURATION_MAX_SECONDS=345600`), janelas temporais de turno e integridade de timestamps.
 - `services/alert_hold.py`: Matriz de carência temporal (hold-down) por criticidade e severidade.
 - `services/alert_view.py`: Serviço de projeção canônica do snapshot em texto puro, calculando duração, tempo de SLA decorrido e identificadores estáveis.
+- `services/blast_radius.py`: Correlacionador de tempestades de incidentes; aglutina alertas simultâneos no mesmo host/nó acima do threshold em um alerta mestre consolidado (`BlastRadiusDetected`).
+- `services/operational_view.py`: Projeções visuais para eventos de resolução de incidentes (`Auto-healing / Resolved`) e pulso diário de saúde operacional (`Heartbeat`).
 
 *Invariante*: O domínio nunca emite chamadas de log e desconhece qualquer detalhe de IO.
 
@@ -94,10 +96,11 @@ Implementa as portas da aplicação utilizando bibliotecas e protocolos específ
 - `adapters/ini_server_config.py`: Leitor e gravador de arquivos `.conf` no formato INI do Nagstamon, com algoritmo de desofuscação de credenciais.
 - `adapters/alertmanager_http.py`: Cliente HTTP para API v2 do Prometheus Alertmanager.
 - `adapters/nagios_cgi_http.py`: Parser resiliente de tabelas HTML expostas por interfaces CGI do Nagios.
-- `adapters/file_alert_dispatch_ledger.py`: Ledger persistente em disco (JSON) com travamento concorrente via `fcntl.flock`.
+- `adapters/file_alert_dispatch_ledger.py`: Ledger persistente em disco (JSON) com travamento concorrente via `fcntl.flock`, reconciliação de incidentes resolvidos e metadados de ciclo de vida.
 - `adapters/in_memory_alert_dispatch_ledger.py`: Ledger em memória com `threading.Lock` para ambientes efêmeros.
+- `adapters/monitor_circuit_breaker.py`: Circuit Breaker em memória para isolar servidores lentos/com falha consecutiva durante período de cooldown.
 - `adapters/stdout_alert_sink.py`: Projeção do snapshot formatado no fluxo padrão do terminal.
-- `adapters/google_chat_http.py`: Disparo da mensagem em formato texto para o webhook configurado do Google Chat.
+- `adapters/google_chat_http.py`: Disparo da mensagem com suporte a agrupamento em threads (`threadKey`) e query param `messageReplyOption` para o webhook configurado do Google Chat.
 - `adapters/popen_alert_sound.py`: Reprodução de alerta sonoro via subsistema de áudio local (`paplay` / `aplay`).
 - `config/settings.py`: Mapeamento tipado de variáveis de ambiente.
 

@@ -13,7 +13,8 @@ from typing import TextIO
 PENDING_TTL_SECONDS = 120
 STATUS_PENDING = "pending"
 STATUS_SENT = "sent"
-Record = dict[str, str]
+STATUS_RESOLVED = "resolved"
+Record = dict[str, object]
 Store = dict[str, Record]
 
 
@@ -66,10 +67,14 @@ class FileAlertDispatchLedger:
             at = value.get("at")
             if (
                 isinstance(key, str)
-                and status in {STATUS_PENDING, STATUS_SENT}
+                and status in {STATUS_PENDING, STATUS_SENT, STATUS_RESOLVED}
                 and isinstance(at, str)
             ):
-                records[key] = {"status": status, "at": at}
+                entry: Record = {"status": status, "at": at}
+                meta = value.get("meta")
+                if isinstance(meta, dict):
+                    entry["meta"] = {str(k): str(v) for k, v in meta.items()}
+                records[key] = entry
         return records
 
     def _dump(self, records: Store) -> None:
@@ -113,10 +118,19 @@ class FileAlertDispatchLedger:
             self._dump(records)
             return True
 
-    def confirm(self, *, fingerprint: str, now: datetime) -> None:
+    def confirm(
+        self,
+        *,
+        fingerprint: str,
+        now: datetime,
+        meta: dict[str, str] | None = None,
+    ) -> None:
         with self._exclusive():
             records = self._load()
-            records[fingerprint] = {"status": STATUS_SENT, "at": now.isoformat()}
+            entry: Record = {"status": STATUS_SENT, "at": now.isoformat()}
+            if meta:
+                entry["meta"] = meta
+            records[fingerprint] = entry
             self._dump(records)
 
     def release(self, *, fingerprint: str) -> None:
@@ -131,9 +145,11 @@ class FileAlertDispatchLedger:
         active_fingerprints: frozenset[str],
         now: datetime,
         window_minutes: int,
-    ) -> None:
+        polled_servers: frozenset[str] | None = None,
+    ) -> list[dict[str, str]]:
         sent_cutoff = now - timedelta(minutes=window_minutes)
         pending_cutoff = now - timedelta(seconds=self._pending_ttl_seconds)
+        resolved_list: list[dict[str, str]] = []
         with self._exclusive():
             records = self._load()
             kept: Store = {}
@@ -145,10 +161,24 @@ class FileAlertDispatchLedger:
                 if status == STATUS_PENDING and instant <= pending_cutoff:
                     continue
                 if (
-                    status == STATUS_SENT
+                    status in {STATUS_SENT, STATUS_RESOLVED}
                     and key not in active_fingerprints
                     and instant <= sent_cutoff
                 ):
                     continue
+                if status == STATUS_SENT and key not in active_fingerprints:
+                    raw_meta = record.get("meta")
+                    meta_dict = raw_meta if isinstance(raw_meta, dict) else {}
+                    server_name = str(meta_dict.get("server", ""))
+                    if polled_servers is None or (
+                        server_name and server_name in polled_servers
+                    ):
+                        if meta_dict:
+                            info = {str(k): str(v) for k, v in meta_dict.items()}
+                            info["sent_at"] = instant.isoformat()
+                            info["resolved_at"] = now.isoformat()
+                            resolved_list.append(info)
+                        record["status"] = STATUS_RESOLVED
                 kept[key] = record
             self._dump(kept)
+        return resolved_list

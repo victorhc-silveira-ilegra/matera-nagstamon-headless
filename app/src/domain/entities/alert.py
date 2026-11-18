@@ -125,3 +125,6 @@ class Alert:
 
     def dedup_key(self) -> str:
         return self.incident_key()
+
+    def thread_key(self) -> str:
+        return self.incident_key().replace("\0", ":")[:400]

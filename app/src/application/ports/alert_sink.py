@@ -8,4 +8,17 @@ from domain.entities.alert import Alert
 
 
 class AlertSinkPort(Protocol):
-    def publish(self, alerts: Sequence[Alert], *, fetched_at: datetime) -> None: ...
+    def publish(
+        self,
+        alerts: Sequence[Alert],
+        *,
+        fetched_at: datetime,
+        thread_key: str | None = None,
+    ) -> None: ...
+
+    def publish_text(
+        self,
+        text: str,
+        *,
+        thread_key: str | None = None,
+    ) -> None: ...

@@ -183,3 +183,40 @@ def test_file_ledger_reconcile_active_expires_resolved_after_window(
         )
         is True
     )
+
+
+def test_file_ledger_resolved_alerts_transition_and_meta(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    ledger.try_claim(fingerprint="f1", now=NOW, window_minutes=30)
+    meta = {"server": "core", "target": "workload-a", "incident_id": "core/a"}
+    ledger.confirm(fingerprint="f1", now=NOW, meta=meta)
+
+    next_cycle = NOW + timedelta(minutes=5)
+    resolved = ledger.reconcile_active(
+        active_fingerprints=frozenset(),
+        now=next_cycle,
+        window_minutes=30,
+        polled_servers=frozenset({"other_server"}),
+    )
+    assert resolved == []
+
+    resolved = ledger.reconcile_active(
+        active_fingerprints=frozenset(),
+        now=next_cycle,
+        window_minutes=30,
+        polled_servers=frozenset({"core"}),
+    )
+    assert len(resolved) == 1
+    assert resolved[0]["server"] == "core"
+    assert resolved[0]["target"] == "workload-a"
+    assert resolved[0]["incident_id"] == "core/a"
+    assert resolved[0]["sent_at"] == NOW.isoformat()
+    assert resolved[0]["resolved_at"] == next_cycle.isoformat()
+
+    subsequent = ledger.reconcile_active(
+        active_fingerprints=frozenset(),
+        now=next_cycle + timedelta(minutes=1),
+        window_minutes=30,
+        polled_servers=frozenset({"core"}),
+    )
+    assert subsequent == []

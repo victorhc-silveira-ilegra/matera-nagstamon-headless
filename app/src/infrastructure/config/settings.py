@@ -146,6 +146,11 @@ class Settings:
     dedup_ledger_path: Path | None
     filter_services_regex: str = r"^(PodPending\s*|\s*KubeContainerWaiting)$"
     filter_duration_regex: str = r"([4-9]|\d{2,})d"
+    blast_radius_threshold: int = 5
+    circuit_breaker_enabled: bool = True
+    circuit_breaker_max_failures: int = 3
+    circuit_breaker_cooldown_seconds: int = 300
+    heartbeat_enabled: bool = True
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -234,6 +239,19 @@ class Settings:
         gchat_webhook_url = os.environ.get("GCHAT_WEBHOOK_URL", "").strip()
         ledger_raw = os.environ.get("DEDUP_LEDGER_PATH", "").strip()
         dedup_ledger_path = Path(ledger_raw).expanduser() if ledger_raw else None
+        blast_threshold = _parse_positive_int(
+            os.environ.get("BLAST_RADIUS_THRESHOLD", "5"), "BLAST_RADIUS_THRESHOLD"
+        )
+        cb_enabled = _parse_bool(os.environ.get("CIRCUIT_BREAKER_ENABLED", "true"))
+        cb_max_failures = _parse_positive_int(
+            os.environ.get("CIRCUIT_BREAKER_MAX_FAILURES", "3"),
+            "CIRCUIT_BREAKER_MAX_FAILURES",
+        )
+        cb_cooldown = _parse_positive_int(
+            os.environ.get("CIRCUIT_BREAKER_COOLDOWN_SECONDS", "300"),
+            "CIRCUIT_BREAKER_COOLDOWN_SECONDS",
+        )
+        heartbeat_enabled = _parse_bool(os.environ.get("HEARTBEAT_ENABLED", "true"))
         return cls(
             servers_dir=servers_dir,
             proxy_addr=proxy_addr,
@@ -261,4 +279,9 @@ class Settings:
             sound_enabled=sound_enabled,
             gchat_webhook_url=gchat_webhook_url,
             dedup_ledger_path=dedup_ledger_path,
+            blast_radius_threshold=blast_threshold,
+            circuit_breaker_enabled=cb_enabled,
+            circuit_breaker_max_failures=cb_max_failures,
+            circuit_breaker_cooldown_seconds=cb_cooldown,
+            heartbeat_enabled=heartbeat_enabled,
         )

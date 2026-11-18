@@ -236,3 +236,11 @@ def test_stdout_sink_default_stream(monkeypatch: pytest.MonkeyPatch) -> None:
         fetched_at=datetime(2026, 8, 13, 12, 0, 0, tzinfo=UTC),
     )
     assert captured.getvalue() == ""
+
+
+def test_stdout_sink_publish_text() -> None:
+    stream = StringIO()
+    sink = StdoutAlertSink(stream=stream)
+    sink.publish_text("Custom notification")
+    assert "Custom notification" in stream.getvalue()
+    sink.publish_text("")

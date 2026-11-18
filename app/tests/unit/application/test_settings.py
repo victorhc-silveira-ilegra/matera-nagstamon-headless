@@ -41,6 +41,11 @@ def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SOUND_ENABLED", "false")
     monkeypatch.setenv("GCHAT_WEBHOOK_URL", "https://chat.example/messages?key=k")
     monkeypatch.setenv("DEDUP_LEDGER_PATH", "/tmp/dispatch-ledger.json")
+    monkeypatch.setenv("BLAST_RADIUS_THRESHOLD", "10")
+    monkeypatch.setenv("CIRCUIT_BREAKER_ENABLED", "false")
+    monkeypatch.setenv("CIRCUIT_BREAKER_MAX_FAILURES", "5")
+    monkeypatch.setenv("CIRCUIT_BREAKER_COOLDOWN_SECONDS", "600")
+    monkeypatch.setenv("HEARTBEAT_ENABLED", "false")
     settings = Settings.from_env()
     assert settings.servers_dir == Path("/tmp/servers")
     assert settings.proxy_addr == "http://proxy.example:3128"
@@ -67,6 +72,11 @@ def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.sound_enabled is False
     assert settings.gchat_webhook_url == "https://chat.example/messages?key=k"
     assert settings.dedup_ledger_path == Path("/tmp/dispatch-ledger.json")
+    assert settings.blast_radius_threshold == 10
+    assert settings.circuit_breaker_enabled is False
+    assert settings.circuit_breaker_max_failures == 5
+    assert settings.circuit_breaker_cooldown_seconds == 600
+    assert settings.heartbeat_enabled is False
 
 
 def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -123,6 +133,11 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert settings.filter_duration_regex == r"([4-9]|\d{2,})d"
     assert settings.sound_enabled is True
+    assert settings.blast_radius_threshold == 5
+    assert settings.circuit_breaker_enabled is True
+    assert settings.circuit_breaker_max_failures == 3
+    assert settings.circuit_breaker_cooldown_seconds == 300
+    assert settings.heartbeat_enabled is True
     assert settings.gchat_webhook_url == ""
     assert settings.dedup_ledger_path is None
 

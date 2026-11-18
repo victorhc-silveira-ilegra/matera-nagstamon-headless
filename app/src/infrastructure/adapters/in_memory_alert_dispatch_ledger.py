@@ -24,7 +24,13 @@ class InMemoryAlertDispatchLedger:
             self._claims[fingerprint] = now
             return True
 
-    def confirm(self, *, fingerprint: str, now: datetime) -> None:
+    def confirm(
+        self,
+        *,
+        fingerprint: str,
+        now: datetime,
+        meta: dict[str, str] | None = None,
+    ) -> None:
         with self._lock:
             if fingerprint in self._claims:
                 self._claims[fingerprint] = now
@@ -39,7 +45,9 @@ class InMemoryAlertDispatchLedger:
         active_fingerprints: frozenset[str],
         now: datetime,
         window_minutes: int,
-    ) -> None:
+        polled_servers: frozenset[str] | None = None,
+    ) -> list[dict[str, str]]:
+        _ = polled_servers
         cutoff = now - timedelta(minutes=window_minutes)
         with self._lock:
             expired = [
@@ -49,3 +57,4 @@ class InMemoryAlertDispatchLedger:
             ]
             for key in expired:
                 self._claims.pop(key, None)
+        return []

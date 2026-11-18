@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from datetime import datetime
 
 import pytest
 
@@ -9,6 +10,7 @@ from domain.entities.alert import Alert
 from domain.entities.monitor_server import MonitorServer
 from domain.entities.severity import Severity
 from infrastructure.adapters.composite_monitor_client import CompositeMonitorClient
+from infrastructure.adapters.monitor_circuit_breaker import MonitorCircuitBreaker
 from infrastructure.logging.events import MONITOR_FETCH_FAILED
 
 
@@ -94,3 +96,25 @@ def test_composite_fail_open_on_unexpected_error(
         for record in caplog.records
         if hasattr(record, "semantic")
     )
+
+
+def test_composite_respects_circuit_breaker() -> None:
+    now = datetime.now().astimezone()
+    breaker = MonitorCircuitBreaker(max_failures=1, cooldown_seconds=300)
+    breaker.record_failure("broken", now)
+    am = FakeClient([_alert("am", "OK")])
+    nagios = FakeClient([_alert("broken", "ERR")])
+    client = CompositeMonitorClient(
+        alertmanager=am,  # type: ignore[arg-type]
+        nagios=nagios,  # type: ignore[arg-type]
+        circuit_breaker=breaker,
+    )
+    result = client.fetch_all(
+        [_server("am", "alertmanager"), _server("broken", "nagios")]
+    )
+    assert len(result) == 1
+    assert result[0].server == "am"
+    assert "broken" not in [s.name for s in nagios.seen]
+
+    empty = client.fetch_all([_server("broken", "nagios")])
+    assert empty == []

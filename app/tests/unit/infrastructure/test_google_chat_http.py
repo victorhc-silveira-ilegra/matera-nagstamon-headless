@@ -87,9 +87,11 @@ def test_gchat_posts_same_card_text(
     assert len(transport.requests) == 1
     request = transport.requests[0]
     assert str(request.url).startswith("https://chat.googleapis.com/")
+    assert "messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD" in str(request.url)
     body = json.loads(request.content)
     expected = render_effective_alerts([alert], NOW, DISPLAY_TIMEZONE)
-    assert body == {"text": expected}
+    assert body["text"] == expected
+    assert body["thread"] == {"threadKey": alert.thread_key()}
     assert "*Client:*" in body["text"]
     assert "core" in body["text"]
     assert _has_event(caplog, POLL_GCHAT_PUBLISHED)
@@ -155,3 +157,38 @@ def test_gchat_init_with_proxy() -> None:
         WEBHOOK, timeout_seconds=5.0, proxy="http://127.0.0.1:3128"
     )
     assert sink is not None
+
+
+def test_gchat_publish_text_and_thread_options() -> None:
+    transport = _Transport()
+    sink = _sink(transport)
+    sink.publish_text("   ")
+    assert transport.requests == []
+
+    sink.publish_text("heartbeat", thread_key=None)
+    assert len(transport.requests) == 1
+    req1 = transport.requests[0]
+    body1 = json.loads(req1.content)
+    assert body1 == {"text": "heartbeat"}
+    assert "messageReplyOption" not in str(req1.url)
+
+    sink_no_param = GoogleChatWebhookSink(
+        "https://chat.googleapis.com/v1/spaces/XYZ/messages",
+        timeout_seconds=5.0,
+        transport=transport,
+    )
+    sink_no_param.publish_text("reply", thread_key="tkey1")
+    assert len(transport.requests) == 2
+    req2 = transport.requests[1]
+    body2 = json.loads(req2.content)
+    assert body2["thread"] == {"threadKey": "tkey1"}
+    assert "?messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD" in str(req2.url)
+
+
+def test_gchat_publish_multiple_alerts_no_thread_key() -> None:
+    transport = _Transport()
+    sink = _sink(transport)
+    sink.publish([_alert(), _alert()], fetched_at=NOW)
+    assert len(transport.requests) == 1
+    body = json.loads(transport.requests[0].content)
+    assert "thread" not in body

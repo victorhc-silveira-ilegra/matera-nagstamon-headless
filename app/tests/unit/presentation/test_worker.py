@@ -80,6 +80,7 @@ def _settings(tmp_path: Path, *, log_dir: Path | None = None) -> Settings:
         sound_enabled=False,
         gchat_webhook_url="",
         dedup_ledger_path=None,
+        heartbeat_enabled=False,
     )
 
 
@@ -123,6 +124,7 @@ def test_build_use_case_dedup_disabled(tmp_path: Path) -> None:
         sound_enabled=False,
         gchat_webhook_url="",
         dedup_ledger_path=None,
+        heartbeat_enabled=False,
     )
     use_case = build_use_case(disabled)
     result = use_case.execute()

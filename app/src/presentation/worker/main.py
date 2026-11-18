@@ -19,6 +19,7 @@ from infrastructure.adapters.in_memory_alert_dispatch_ledger import (
     InMemoryAlertDispatchLedger,
 )
 from infrastructure.adapters.ini_server_config import IniServerConfigAdapter
+from infrastructure.adapters.monitor_circuit_breaker import MonitorCircuitBreaker
 from infrastructure.adapters.nagios_cgi_http import NagiosCgiHttpClient
 from infrastructure.adapters.popen_alert_sound import PopenAlertSound
 from infrastructure.adapters.stdout_alert_sink import StdoutAlertSink
@@ -79,15 +80,28 @@ def build_use_case(settings: Settings) -> PollMonitorsUseCase:
     timeout = settings.http_timeout_seconds
     sound = PopenAlertSound() if settings.sound_enabled else None
     clock = SystemClock()
+    circuit_breaker = (
+        MonitorCircuitBreaker(
+            max_failures=settings.circuit_breaker_max_failures,
+            cooldown_seconds=settings.circuit_breaker_cooldown_seconds,
+        )
+        if settings.circuit_breaker_enabled
+        else None
+    )
     return PollMonitorsUseCase(
         server_config=IniServerConfigAdapter(
             servers_dir=settings.servers_dir,
             default_proxy=settings.proxy_addr,
         ),
         monitor_client=CompositeMonitorClient(
-            alertmanager=AlertmanagerHttpClient(timeout_seconds=timeout),
-            nagios=NagiosCgiHttpClient(timeout_seconds=timeout),
+            alertmanager=AlertmanagerHttpClient(
+                timeout_seconds=timeout, circuit_breaker=circuit_breaker
+            ),
+            nagios=NagiosCgiHttpClient(
+                timeout_seconds=timeout, circuit_breaker=circuit_breaker
+            ),
             max_workers=settings.http_max_workers,
+            circuit_breaker=circuit_breaker,
         ),
         alert_sink=_alert_sink(settings),
         clock=clock,
@@ -117,6 +131,8 @@ def build_use_case(settings: Settings) -> PollMonitorsUseCase:
         dispatch_ledger=_dispatch_ledger(settings),
         alert_sound=sound,
         dedup_window_minutes=settings.dedup_window_minutes,
+        blast_radius_threshold=settings.blast_radius_threshold,
+        heartbeat_enabled=settings.heartbeat_enabled,
     )
 
 

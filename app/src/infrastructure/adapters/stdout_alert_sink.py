@@ -23,7 +23,13 @@ class StdoutAlertSink:
         self._stream = stream or sys.stdout
         self._timezone = timezone or DISPLAY_TIMEZONE
 
-    def publish(self, alerts: Sequence[Alert], *, fetched_at: datetime) -> None:
+    def publish(
+        self,
+        alerts: Sequence[Alert],
+        *,
+        fetched_at: datetime,
+        thread_key: str | None = None,
+    ) -> None:
         text = render_effective_alerts(alerts, fetched_at, self._timezone)
         if text:
             print(
@@ -36,4 +42,23 @@ class StdoutAlertSink:
             logging.INFO,
             POLL_SINK_PUBLISHED,
             alerts_count=len(alerts),
+        )
+
+    def publish_text(
+        self,
+        text: str,
+        *,
+        thread_key: str | None = None,
+    ) -> None:
+        if text:
+            print(
+                f"\n{text}\n",
+                file=self._stream,
+                flush=True,
+            )
+        log_event(
+            logger,
+            logging.INFO,
+            POLL_SINK_PUBLISHED,
+            alerts_count=1,
         )

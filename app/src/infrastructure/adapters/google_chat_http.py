@@ -48,13 +48,39 @@ class GoogleChatWebhookSink:
             headers=USER_AGENT,
         )
 
-    def publish(self, alerts: Sequence[Alert], *, fetched_at: datetime) -> None:
+    def publish(
+        self,
+        alerts: Sequence[Alert],
+        *,
+        fetched_at: datetime,
+        thread_key: str | None = None,
+    ) -> None:
         if not alerts:
             return
         text = render_effective_alerts(alerts, fetched_at, self._timezone)
+        resolved_thread = thread_key or (
+            alerts[0].thread_key() if len(alerts) == 1 else None
+        )
+        self.publish_text(text, thread_key=resolved_thread)
+
+    def publish_text(
+        self,
+        text: str,
+        *,
+        thread_key: str | None = None,
+    ) -> None:
+        if not text.strip():
+            return
+        payload: dict[str, object] = {"text": text}
+        if thread_key:
+            payload["thread"] = {"threadKey": thread_key}
+        url = self._webhook_url
+        if thread_key and "messageReplyOption" not in url:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD"
         with self._lock:
             try:
-                response = self._client.post(self._webhook_url, json={"text": text})
+                response = self._client.post(url, json=payload)
             except Exception as exc:
                 self._log_failed(type(exc).__name__)
                 raise GoogleChatDeliveryError(type(exc).__name__) from exc
@@ -63,7 +89,7 @@ class GoogleChatWebhookSink:
                     logger,
                     logging.INFO,
                     POLL_GCHAT_PUBLISHED,
-                    alerts_count=len(alerts),
+                    alerts_count=1,
                 )
                 return
             self._log_failed("http_status", http_status=response.status_code)

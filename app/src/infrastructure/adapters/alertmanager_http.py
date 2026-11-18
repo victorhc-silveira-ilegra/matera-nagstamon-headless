@@ -11,6 +11,7 @@ from domain.entities.alert import Alert
 from domain.entities.monitor_server import MonitorServer
 from domain.entities.severity import Severity
 from infrastructure.adapters.http_client import build_http_client, log_fetch_failed
+from infrastructure.adapters.monitor_circuit_breaker import MonitorCircuitBreaker
 
 
 def _as_dict(value: object) -> dict[str, Any]:
@@ -111,9 +112,11 @@ class AlertmanagerHttpClient:
         self,
         timeout_seconds: float,
         transport: httpx.BaseTransport | None = None,
+        circuit_breaker: MonitorCircuitBreaker | None = None,
     ) -> None:
         self._timeout_seconds = timeout_seconds
         self._transport = transport
+        self._circuit_breaker = circuit_breaker
 
     def fetch(self, server: MonitorServer) -> list[Alert]:
         url = (
@@ -122,9 +125,12 @@ class AlertmanagerHttpClient:
             else f"{server.url.rstrip('/')}/api/v2/alerts"
         )
         client = build_http_client(server, self._timeout_seconds, self._transport)
+        now_dt = datetime.now().astimezone()
         try:
             response = client.get(url)
             if response.status_code != 200:
+                if self._circuit_breaker is not None:
+                    self._circuit_breaker.record_failure(server.name, now_dt)
                 log_fetch_failed(
                     server,
                     error_type="http_status",
@@ -132,6 +138,8 @@ class AlertmanagerHttpClient:
                     exc_info=logging.getLogger(__name__).isEnabledFor(logging.DEBUG),
                 )
                 return []
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.record_success(server.name)
             payload = response.json()
             if not isinstance(payload, list):
                 log_fetch_failed(server, error_type="invalid_payload")
@@ -146,6 +154,8 @@ class AlertmanagerHttpClient:
                     continue
             return alerts
         except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc:
+            if self._circuit_breaker is not None:
+                self._circuit_breaker.record_failure(server.name, now_dt)
             log_fetch_failed(
                 server,
                 error_type=type(exc).__name__,

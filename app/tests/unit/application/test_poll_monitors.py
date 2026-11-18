@@ -50,12 +50,20 @@ class FakeAlertSink:
         fail_on: int | None = None,
     ) -> None:
         self.published: list[Alert] = []
+        self.published_texts: list[str] = []
+        self.thread_keys: list[str | None] = []
         self.fetched_at: datetime | None = None
         self.error = error
         self.calls = 0
         self.fail_on: int | None = fail_on
 
-    def publish(self, alerts: Sequence[Alert], *, fetched_at: datetime) -> None:
+    def publish(
+        self,
+        alerts: Sequence[Alert],
+        *,
+        fetched_at: datetime,
+        thread_key: str | None = None,
+    ) -> None:
         self.calls += 1
         if self.error is not None and (
             self.fail_on is None or self.calls == self.fail_on
@@ -63,6 +71,16 @@ class FakeAlertSink:
             raise self.error
         self.published.extend(list(alerts))
         self.fetched_at = fetched_at
+        self.thread_keys.append(thread_key)
+
+    def publish_text(
+        self,
+        text: str,
+        *,
+        thread_key: str | None = None,
+    ) -> None:
+        self.published_texts.append(text)
+        self.thread_keys.append(thread_key)
 
 
 class FakeLedger:
@@ -70,6 +88,8 @@ class FakeLedger:
         self.claims: dict[str, datetime] = {}
         self.released: list[str] = []
         self.confirmed: list[str] = []
+        self.meta: dict[str, dict[str, str]] = {}
+        self.resolved_to_return: list[dict[str, str]] = []
 
     def try_claim(
         self, *, fingerprint: str, now: datetime, window_minutes: int
@@ -81,9 +101,17 @@ class FakeLedger:
         self.claims[fingerprint] = now
         return True
 
-    def confirm(self, *, fingerprint: str, now: datetime) -> None:
+    def confirm(
+        self,
+        *,
+        fingerprint: str,
+        now: datetime,
+        meta: dict[str, str] | None = None,
+    ) -> None:
         self.confirmed.append(fingerprint)
         self.claims[fingerprint] = now
+        if meta:
+            self.meta[fingerprint] = meta
 
     def release(self, *, fingerprint: str) -> None:
         self.released.append(fingerprint)
@@ -95,11 +123,14 @@ class FakeLedger:
         active_fingerprints: frozenset[str],
         now: datetime,
         window_minutes: int,
-    ) -> None:
+        polled_servers: frozenset[str] | None = None,
+    ) -> list[dict[str, str]]:
+        _ = polled_servers
         cutoff = now - timedelta(minutes=window_minutes)
         for key in list(self.claims):
             if key not in active_fingerprints and self.claims[key] <= cutoff:
                 self.claims.pop(key, None)
+        return list(self.resolved_to_return)
 
 
 class FakeSound:
