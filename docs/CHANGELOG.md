@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.19.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.18.0...v1.19.0) (2026-11-18)
+
+### Features
+
+* **chatops:** adiciona threading no gchat, auto-healing, blast radius e circuit breaker ([7eecb64](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/7eecb6446422176e1a374ef8a1c54f034953d262))
+
 ## [1.18.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.17.2...v1.18.0) (2026-11-18)
 
 ### Features
