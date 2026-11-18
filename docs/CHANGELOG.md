@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.18.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.17.2...v1.18.0) (2026-11-18)
+
+### Features
+
+* **filters:** propaga flags de host e adiciona descarte de checks desativados ([75c425c](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/75c425cf0d4f2b9109ec3c2036075950c1fc296f))
+
 ## [1.17.2](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.17.1...v1.17.2) (2026-11-17)
 
 ### Bug Fixes
