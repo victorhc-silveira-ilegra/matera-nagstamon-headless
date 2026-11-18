@@ -182,7 +182,8 @@ def test_gchat_publish_text_and_thread_options() -> None:
     req2 = transport.requests[1]
     body2 = json.loads(req2.content)
     assert body2["thread"] == {"threadKey": "tkey1"}
-    assert "?messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD" in str(req2.url)
+    assert "threadKey=tkey1" in str(req2.url)
+    assert "messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD" in str(req2.url)
 
 
 def test_gchat_publish_multiple_alerts_no_thread_key() -> None:

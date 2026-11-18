@@ -5,8 +5,6 @@ from zoneinfo import ZoneInfo
 
 from domain.services.alert_view import (
     DISPLAY_TIMEZONE,
-    MISSING,
-    _labeled,
     display_value,
     format_clock_time,
 )
@@ -23,25 +21,15 @@ def render_resolved_alert(
 ) -> str:
     zone = timezone or DISPLAY_TIMEZONE
     clock_str = format_clock_time(resolved_at, zone)
-    duration_str = (
-        f"{duration_minutes}m"
-        if duration_minutes is not None and duration_minutes >= 0
-        else MISSING
+    duration_suffix = (
+        f" normalizado após {duration_minutes} minutos."
+        if duration_minutes is not None and duration_minutes > 0
+        else " normalizado."
     )
-    return "\n".join(
-        [
-            _labeled("Status", "RESOLVIDO"),
-            _labeled("Client", display_value(server)),
-            _labeled("Alvo", display_value(target)),
-            _labeled("Horário da resolução", clock_str),
-            _labeled("Duração aproximada", duration_str),
-            _labeled(
-                "Status information",
-                "O incidente foi normalizado e não está mais ativo na "
-                "monitoria de origem.",
-            ),
-            _labeled("ID do Incidente (SLA)", display_value(incident_id)),
-        ]
+    srv = display_value(server)
+    tgt = display_value(target)
+    return (
+        f"[RESOLVIDO] {srv} / {tgt}{duration_suffix}\nHorário da resolução: {clock_str}"
     )
 
 
@@ -54,7 +42,7 @@ def render_heartbeat(
     zone = timezone or DISPLAY_TIMEZONE
     clock_str = format_clock_time(checked_at, zone)
     return (
-        f"🟢 *STATUS DO MONITOR* ({clock_str})\n"
+        f"*STATUS DO MONITOR* ({clock_str})\n"
         f"Nagstamon Headless ativo e operacional. "
         f"{servers_count} servidores monitorados com sucesso, "
         "0 incidentes pendentes."

@@ -4,6 +4,7 @@ import logging
 import threading
 from collections.abc import Sequence
 from datetime import datetime
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -72,12 +73,15 @@ class GoogleChatWebhookSink:
         if not text.strip():
             return
         payload: dict[str, object] = {"text": text}
+        url = self._webhook_url
         if thread_key:
             payload["thread"] = {"threadKey": thread_key}
-        url = self._webhook_url
-        if thread_key and "messageReplyOption" not in url:
+            encoded_thread = quote(thread_key)
             sep = "&" if "?" in url else "?"
-            url = f"{url}{sep}messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD"
+            url = (
+                f"{url}{sep}threadKey={encoded_thread}"
+                "&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD"
+            )
         with self._lock:
             try:
                 response = self._client.post(url, json=payload)

@@ -192,14 +192,12 @@ def test_use_case_resolved_notifications() -> None:
     result = use_case.execute()
     assert result.claimed_count == 0
     assert len(sink.texts) == 3
-    assert "*Status:* RESOLVIDO" in sink.texts[0]
-    assert "*Alvo:* order-api" in sink.texts[0]
-    assert "*Duração aproximada:* 34m" in sink.texts[0]
+    assert "[RESOLVIDO] core / order-api normalizado após 34 minutos." in sink.texts[0]
+    assert "Horário da resolução: " in sink.texts[0]
     assert sink.thread_keys[0] == "core:k8s:order-api"
 
-    assert "*Status:* RESOLVIDO" in sink.texts[1]
-    assert "*Alvo:* pay-api" in sink.texts[1]
-    assert "*Duração aproximada:* --" in sink.texts[1]
+    assert "[RESOLVIDO] core / pay-api normalizado." in sink.texts[1]
+    assert "Horário da resolução: " in sink.texts[1]
     assert sink.thread_keys[1] == "core:k8s:pay-api"
 
 
@@ -224,7 +222,8 @@ def test_use_case_heartbeat_window_start_and_end() -> None:
     )
     use_case.execute()
     assert len(sink.texts) == 1
-    assert "🟢 *STATUS DO MONITOR*" in sink.texts[0]
+    assert "*STATUS DO MONITOR*" in sink.texts[0]
+    assert "🟢" not in sink.texts[0]
 
     use_case.execute()
     assert len(sink.texts) == 1
@@ -232,7 +231,8 @@ def test_use_case_heartbeat_window_start_and_end() -> None:
     clock.current = datetime(2026, 8, 14, 18, 5, 0, tzinfo=SP_TZ)
     use_case.execute()
     assert len(sink.texts) == 2
-    assert "🟢 *STATUS DO MONITOR*" in sink.texts[1]
+    assert "*STATUS DO MONITOR*" in sink.texts[1]
+    assert "🟢" not in sink.texts[1]
 
 
 def test_use_case_heartbeat_skips_outside_weekdays_or_disabled() -> None:

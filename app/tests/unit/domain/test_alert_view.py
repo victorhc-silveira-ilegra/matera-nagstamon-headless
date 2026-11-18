@@ -101,7 +101,7 @@ def test_started_from_duration_when_clock_missing() -> None:
             fetched_at=FETCHED,
             timezone=DISPLAY_TIMEZONE,
         )
-        == "14/08/2026 11:45:00"
+        == "14/08/2026 - 11:45:00"
     )
     assert (
         format_started(
@@ -142,7 +142,7 @@ def test_render_card_fields_and_wrap() -> None:
     assert _row("Service", "DiskFull") in text
     assert _row("Ambiente", "PRD") in text
     assert _row("Duração no Nagstamon", "--") in text
-    assert _row("Horário do envio", "14:00:00 (14/08/2026)") in text
+    assert _row("Horário do envio", "14/08/2026 - 14:00:00") in text
     assert _row("Início do alarme", "--") in text
     assert _row("Status information", "inode usage high") in text
     assert _row("Criticidade SLA", "Muito Crítico (Carência: 10m)") in text
@@ -171,7 +171,7 @@ def test_render_started_duration_and_sort() -> None:
     info_at = text.index(_row("Status", "INFO"))
     assert critical_at < warning_at < info_at
     assert _row("Duração no Nagstamon", "0d 2h 15m") in text
-    assert _row("Início do alarme", "14:45:00 (14/08/2026)") in text
+    assert _row("Início do alarme", "14/08/2026 - 14:45:00") in text
 
 
 def test_render_cgi_started_from_duration() -> None:
@@ -181,7 +181,7 @@ def test_render_cgi_started_from_duration() -> None:
         DISPLAY_TIMEZONE,
     )
     assert _row("Duração no Nagstamon", "0d 2h 15m 3s") in text
-    assert _row("Início do alarme", "11:44:57 (14/08/2026)") in text
+    assert _row("Início do alarme", "14/08/2026 - 11:44:57") in text
 
 
 def test_render_default_timezone_and_placeholders() -> None:
@@ -260,7 +260,7 @@ def test_sla_helpers_and_timing() -> None:
         )
         == MISSING
     )
-    assert format_clock_time(FETCHED, DISPLAY_TIMEZONE) == "14:00:00 (14/08/2026)"
+    assert format_clock_time(FETCHED, DISPLAY_TIMEZONE) == "14/08/2026 - 14:00:00"
     assert format_timestamp(FETCHED, DISPLAY_TIMEZONE).endswith("-0300")
     assert (
         format_alarm_start(

@@ -39,11 +39,11 @@ def format_timestamp(instant: datetime, timezone: ZoneInfo) -> str:
 
 
 def format_started_clock(instant: datetime, timezone: ZoneInfo) -> str:
-    return _aware(instant).astimezone(timezone).strftime("%d/%m/%Y %H:%M:%S")
+    return _aware(instant).astimezone(timezone).strftime("%d/%m/%Y - %H:%M:%S")
 
 
 def format_clock_time(instant: datetime, timezone: ZoneInfo) -> str:
-    return _aware(instant).astimezone(timezone).strftime("%H:%M:%S (%d/%m/%Y)")
+    return _aware(instant).astimezone(timezone).strftime("%d/%m/%Y - %H:%M:%S")
 
 
 def started_instant(
@@ -75,7 +75,7 @@ def format_alarm_start(
     if start is None:
         return MISSING
     local = start.astimezone(timezone)
-    return local.strftime("%H:%M:%S (%d/%m/%Y)")
+    return local.strftime("%d/%m/%Y - %H:%M:%S")
 
 
 def format_started(

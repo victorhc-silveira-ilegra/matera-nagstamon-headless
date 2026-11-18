@@ -18,11 +18,10 @@ def test_render_resolved_alert_with_duration() -> None:
         duration_minutes=42,
         timezone=SP_TZ,
     )
-    assert "*Status:* RESOLVIDO" in text
-    assert "*Client:* core-nagios" in text
-    assert "*Alvo:* db-cluster" in text
-    assert "*Duração aproximada:* 42m" in text
-    assert "*ID do Incidente (SLA):* core/Disk/db01" in text
+    assert (
+        text == "[RESOLVIDO] core-nagios / db-cluster normalizado após 42 minutos.\n"
+        "Horário da resolução: 14/08/2026 - 14:30:00"
+    )
 
 
 def test_render_resolved_alert_without_duration() -> None:
@@ -33,7 +32,8 @@ def test_render_resolved_alert_without_duration() -> None:
         resolved_at=NOW,
         duration_minutes=None,
     )
-    assert "*Duração aproximada:* --" in text
+    assert "[RESOLVIDO] am / pod-x normalizado.\n" in text
+    assert "Horário da resolução: 14/08/2026 - 14:30:00" in text
 
 
 def test_render_heartbeat() -> None:
@@ -42,5 +42,6 @@ def test_render_heartbeat() -> None:
         checked_at=NOW,
         timezone=SP_TZ,
     )
-    assert "🟢 *STATUS DO MONITOR*" in text
+    assert "*STATUS DO MONITOR* (14/08/2026 - 14:30:00)" in text
+    assert "🟢" not in text
     assert "96 servidores monitorados com sucesso" in text
