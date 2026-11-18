@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.20.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.19.0...v1.20.0) (2026-11-18)
+
+### Features
+
+* **format:** padroniza datas, remove emojis e aprimora threads ([7135fe1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/7135fe13d23546bc5404818f37c3c34d25ca5f4a))
+
 ## [1.19.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.18.0...v1.19.0) (2026-11-18)
 
 ### Features
