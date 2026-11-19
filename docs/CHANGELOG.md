@@ -46,69 +46,69 @@
 
 * **filters:** alinha filtros de servicos, duracao e estados com nagstamon 3.16.2 ([0caab22](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/0caab22dce11759f7abcd4932fe1e898142a8632))
 
-## [1.15.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.14.1...v1.15.0) (2026-11-09)
+## [1.15.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.14.1...v1.15.0) (2026-11-09)
 
 ### Features
 
-* **ci:** unifica ci local e github actions com bidirecionalidade 100% e comando make app-ci ([cc4ca93](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/cc4ca9334999625daa097baba35870bc2f095a81))
+* **ci:** unifica ci local e github actions com bidirecionalidade 100% e comando make app-ci ([cc4ca93](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/cc4ca9334999625daa097baba35870bc2f095a81))
 
-## [1.14.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.14.0...v1.14.1) (2026-11-04)
+## [1.14.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.14.0...v1.14.1) (2026-11-04)
 
 ### Bug Fixes
 
-* **infra:** adiciona tratamento e log semantico de falha de tunel no proxy bridge ([8cf7a82](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/8cf7a829aab1c61793955eb2289e4a19bf1b2721))
+* **infra:** adiciona tratamento e log semantico de falha de tunel no proxy bridge ([8cf7a82](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/8cf7a829aab1c61793955eb2289e4a19bf1b2721))
 
-## [1.14.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.13.2...v1.14.0) (2026-11-04)
+## [1.14.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.13.2...v1.14.0) (2026-11-04)
 
 ### Features
 
-* **infra:** integra proxy bridge com resolucao de dns local ao docker compose ([400b2de](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/400b2de61d0eb2151196c86f9ae71ac7458d9a5f))
+* **infra:** integra proxy bridge com resolucao de dns local ao docker compose ([400b2de](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/400b2de61d0eb2151196c86f9ae71ac7458d9a5f))
 
-## [1.13.2](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.13.1...v1.13.2) (2026-11-04)
+## [1.13.2](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.13.1...v1.13.2) (2026-11-04)
 
 ### Bug Fixes
 
-* **infra:** suporte a proxy com resolucao dns no sink do google chat ([67c1245](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/67c12456adb37da873cfda10172e401c0fff35c7))
+* **infra:** suporte a proxy com resolucao dns no sink do google chat ([67c1245](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/67c12456adb37da873cfda10172e401c0fff35c7))
 
-## [1.13.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.13.0...v1.13.1) (2026-11-04)
-
-### Bug Fixes
-
-* **infra:** resolve dns local em proxy, suporta use_proxy e otimiza probe com stream ([2ec6cd4](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/2ec6cd4c508c70446bf5841f5dca05f7935262b4))
-
-## [1.13.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.12.0...v1.13.0) (2026-10-23)
-
-### Features
-
-* **alertas:** calibra filtros SRE, hold-down e reconciliacao do ledger para Google Chat ([bc786b2](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/bc786b2cf24efc36826bd0fab44fbfcffe2331de))
-
-## [1.12.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.11.0...v1.12.0) (2026-10-23)
-
-### Features
-
-* estende padrao senior de observabilidade para alertas legados e infraestrutura ([79b7a5e](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/79b7a5e5e83329d199a8d984a6d8f1c761726d5f))
-
-## [1.11.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.10.1...v1.11.0) (2026-10-23)
-
-### Features
-
-* revisa matriz de alertas k8s e sre liberando as 4 camadas e silenciando ruidos ([ecca1a9](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/ecca1a919364eb90e37d8e343679676296140504))
-
-## [1.10.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.10.0...v1.10.1) (2026-10-02)
+## [1.13.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.13.0...v1.13.1) (2026-11-04)
 
 ### Bug Fixes
 
-* silencia falsos positivos do sensor falcon mantendo alertas k8s criticos ([d2ebdc5](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/d2ebdc5b3322057bc8f24dc9c972aa83c90d7d7d))
+* **infra:** resolve dns local em proxy, suporta use_proxy e otimiza probe com stream ([2ec6cd4](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/2ec6cd4c508c70446bf5841f5dca05f7935262b4))
 
-## [1.10.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.9.1...v1.10.0) (2026-09-03)
+## [1.13.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.12.0...v1.13.0) (2026-10-23)
 
 ### Features
 
-* adiciona app-ping e matriz CI/CD crash-first por area ([60b8f36](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/60b8f364d89c97af5195967c2b066f6c683c9e01))
+* **alertas:** calibra filtros SRE, hold-down e reconciliacao do ledger para Google Chat ([bc786b2](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/bc786b2cf24efc36826bd0fab44fbfcffe2331de))
+
+## [1.12.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.11.0...v1.12.0) (2026-10-23)
+
+### Features
+
+* estende padrao senior de observabilidade para alertas legados e infraestrutura ([79b7a5e](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/79b7a5e5e83329d199a8d984a6d8f1c761726d5f))
+
+## [1.11.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.10.1...v1.11.0) (2026-10-23)
+
+### Features
+
+* revisa matriz de alertas k8s e sre liberando as 4 camadas e silenciando ruidos ([ecca1a9](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/ecca1a919364eb90e37d8e343679676296140504))
+
+## [1.10.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.10.0...v1.10.1) (2026-10-02)
 
 ### Bug Fixes
 
-* **ci:** pina pacotes do semantic-release para o generateNotes ([95e8d41](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/95e8d416ceecbf7275772d204d36f0d939bcfc40))
+* silencia falsos positivos do sensor falcon mantendo alertas k8s criticos ([d2ebdc5](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/d2ebdc5b3322057bc8f24dc9c972aa83c90d7d7d))
+
+## [1.10.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.9.1...v1.10.0) (2026-09-03)
+
+### Features
+
+* adiciona app-ping e matriz CI/CD crash-first por area ([60b8f36](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/60b8f364d89c97af5195967c2b066f6c683c9e01))
+
+### Bug Fixes
+
+* **ci:** pina pacotes do semantic-release para o generateNotes ([95e8d41](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/95e8d416ceecbf7275772d204d36f0d939bcfc40))
 
 ## Unreleased
 
@@ -117,33 +117,33 @@
 * `make app-ping` / `nagstamon-headless-ping`: probe HTTP autenticado (Alertmanager e Nagios CGI) em todos os `*.conf` e grava `enabled=True/False`; usa `HOST_SERVERS_DIR` quando existir para gravar no host com volume Docker `:ro`
 * CI/CD matriz crash-first por area (Python/Docker/GitHub/Scripts), pre-commit alinhado com `fail_fast` e commitlint primeiro; documentacao em `docs/devops.md`
 
-## [1.9.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.9.0...v1.9.1) (2026-08-26)
+## [1.9.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.9.0...v1.9.1) (2026-08-26)
 
 ### Bug Fixes
 
-* auto-detecta interface dinamica de vpn no smoke test ([bbf00be](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/bbf00be9105b38490579bdc82d6d515888dd3966))
+* auto-detecta interface dinamica de vpn no smoke test ([bbf00be](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/bbf00be9105b38490579bdc82d6d515888dd3966))
 
-## [1.9.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.8.0...v1.9.0) (2026-08-26)
-
-### Features
-
-* enriquece snapshot do alerta com ambiente, horarios e metricas de sla/slo ([bfd6fe8](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/bfd6fe8214f2ecfe4db0f29a9eaa61cd67d87799))
-
-## [1.8.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.7.1...v1.8.0) (2026-08-25)
+## [1.9.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.8.0...v1.9.0) (2026-08-26)
 
 ### Features
 
-* permite emitir alertas ativos anteriores ao boot no turno da manha ([74cb1ac](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/74cb1ac3feb2088ac88f436e8b09045551192af0))
+* enriquece snapshot do alerta com ambiente, horarios e metricas de sla/slo ([bfd6fe8](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/bfd6fe8214f2ecfe4db0f29a9eaa61cd67d87799))
 
-## [1.7.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.7.0...v1.7.1) (2026-08-25)
+## [1.8.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.7.1...v1.8.0) (2026-08-25)
+
+### Features
+
+* permite emitir alertas ativos anteriores ao boot no turno da manha ([74cb1ac](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/74cb1ac3feb2088ac88f436e8b09045551192af0))
+
+## [1.7.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.7.0...v1.7.1) (2026-08-25)
 
 ### Bug Fixes
 
-* deduplica alerta por problema ignorando metricas dinamicas ([09032b9](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/commit/09032b937240c9f77efcb6d571f90d0daea9c6be))
+* deduplica alerta por problema ignorando metricas dinamicas ([09032b9](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/commit/09032b937240c9f77efcb6d571f90d0daea9c6be))
 
-## [1.7.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.6.0...v1.7.0) (2026-08-17)
+## [1.7.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.6.0...v1.7.0) (2026-08-17)
 
-## [1.6.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.5.0...v1.6.0) (2026-08-17)
+## [1.6.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.5.0...v1.6.0) (2026-08-17)
 
 ## Unreleased
 
@@ -155,19 +155,19 @@
 - Ledger nao republica fingerprint `sent` (uma emissao ate `release` ou apagar o arquivo).
 - Arquivo diario em `LOG_DIR` segue o recorte do `make docker-logs` (INFO + snapshot).
 
-## [1.5.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.4.0...v1.5.0) (2026-08-17)
+## [1.5.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.4.0...v1.5.0) (2026-08-17)
 
-## [1.4.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.3.1...v1.4.0) (2026-08-14)
+## [1.4.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.3.1...v1.4.0) (2026-08-14)
 
-## [1.3.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.3.0...v1.3.1) (2026-08-14)
+## [1.3.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.3.0...v1.3.1) (2026-08-14)
 
-## [1.3.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.2.0...v1.3.0) (2026-08-14)
+## [1.3.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.2.0...v1.3.0) (2026-08-14)
 
-## [1.2.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.1.1...v1.2.0) (2026-08-14)
+## [1.2.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.1.1...v1.2.0) (2026-08-14)
 
-## [1.1.1](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.1.0...v1.1.1) (2026-08-14)
+## [1.1.1](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.1.0...v1.1.1) (2026-08-14)
 
-## [1.1.0](https://github.com/victorhc-silveira-ilegra/nagstamon-headless/compare/v1.0.0...v1.1.0) (2026-08-14)
+## [1.1.0](https://github.com/victorhc-silveira-ilegra/matera-nagstamon-headless/compare/v1.0.0...v1.1.0) (2026-08-14)
 
 ## Unreleased
 
